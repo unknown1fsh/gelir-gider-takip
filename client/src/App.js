@@ -6,6 +6,9 @@ import AccountForm from './components/AccountForm';
 import CreditCardForm from './components/CreditCardForm';
 import AccountsList from './components/AccountsList';
 import CreditCardsList from './components/CreditCardsList';
+import IncomeForm from './components/IncomeForm';
+import ExpenseForm from './components/ExpenseForm';
+import Analytics from './components/Analytics';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -17,10 +20,13 @@ function App() {
         <div className="container mt-4">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/hesap-ekle" element={<AccountForm />} />
-            <Route path="/kredi-karti-ekle" element={<CreditCardForm />} />
-            <Route path="/hesaplar" element={<AccountsList />} />
-            <Route path="/kredi-kartlari" element={<CreditCardsList />} />
+            <Route path="/accounts/new" element={<AccountForm />} />
+            <Route path="/credit-cards/new" element={<CreditCardForm />} />
+            <Route path="/accounts" element={<AccountsList />} />
+            <Route path="/credit-cards" element={<CreditCardsList />} />
+            <Route path="/incomes/new" element={<IncomeForm />} />
+            <Route path="/expenses/new" element={<ExpenseForm />} />
+            <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </div>
