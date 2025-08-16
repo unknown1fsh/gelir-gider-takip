@@ -1,0 +1,27 @@
+{
+  "name": "gelir-gider-takip-backend",
+  "version": "1.0.0",
+  "description": "Gelir Gider Takip Uygulaması Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-client": "cd client && npm install",
+    "heroku-postbuild": "npm run install-client && npm run build"
+  },
+  "keywords": ["gelir", "gider", "takip", "finans", "nodejs", "express", "mysql"],
+  "author": "unknown1fsh",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
