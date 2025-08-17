@@ -56,6 +56,7 @@ const IncomeForm = () => {
         { value: 'salary', label: 'Maaş' },
         { value: 'rental', label: 'Kira Geliri' },
         { value: 'investment', label: 'Yatırım Geliri' },
+        { value: 'food_card', label: 'Yemek Kartı *' },
         { value: 'other', label: 'Diğer' }
     ];
 
@@ -120,6 +121,11 @@ const IncomeForm = () => {
                                             </option>
                                         ))}
                                     </Form.Select>
+                                    {formData.income_type === 'food_card' && (
+                                        <Form.Text className="text-warning">
+                                            ⚠️ Yemek kartı geliri sadece yemek giderlerinde kullanılır ve genel gelir hesaplamalarına dahil edilmez.
+                                        </Form.Text>
+                                    )}
                                 </Form.Group>
                             </Col>
                             <Col md={6}>

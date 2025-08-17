@@ -8,6 +8,30 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Gelir türü etiketlerini Türkçe'ye çevir
+  const getIncomeTypeLabel = (type) => {
+    const types = {
+      'salary': 'Maaş',
+      'part_time': 'Ek İş',
+      'rental': 'Kira Geliri',
+      'investment': 'Yatırım',
+      'food_card': 'Yemek Kartı',
+      'other': 'Diğer'
+    };
+    return types[type] || type;
+  };
+
+  // Ödeme yöntemi etiketlerini Türkçe'ye çevir
+  const getPaymentMethodLabel = (method) => {
+    const methods = {
+      'cash': 'Nakit',
+      'credit_card': 'Kredi Kartı',
+      'bank_transfer': 'Banka Transferi',
+      'credit_account': 'Kredili Hesap'
+    };
+    return methods[method] || method;
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -214,6 +238,7 @@ const Dashboard = () => {
     totalIncome,
     totalExpense,
     netIncome,
+    foodCardIncome,
     recentIncomes,
     recentExpenses,
     recentAccounts,
@@ -317,13 +342,12 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col md={3}>
-          <Card className="text-center border-info h-100">
+          <Card className="text-center border-warning h-100">
             <Card.Body>
-              <h3 className="text-info">💡</h3>
-              <h5>Tasarruf Oranı</h5>
-              <h3 className="text-info">
-                {totalIncome > 0 ? `${((netIncome / totalIncome) * 100).toFixed(1)}%` : '0%'}
-              </h3>
+              <h3 className="text-warning">🍽️</h3>
+              <h5>Yemek Kartı Geliri</h5>
+              <h3 className="text-warning">{formatCurrency(foodCardIncome)}</h3>
+              <small className="text-muted">Sadece yemek giderlerinde kullanılır</small>
             </Card.Body>
           </Card>
         </Col>
@@ -406,7 +430,7 @@ const Dashboard = () => {
                       <div>
                         <div className="fw-bold">{income.title}</div>
                         <small className="text-muted">
-                          {income.income_type} • {income.source}
+                          {getIncomeTypeLabel(income.income_type)} • {income.source}
                         </small>
                       </div>
                       <div className="text-end">
@@ -457,7 +481,7 @@ const Dashboard = () => {
                       <div>
                         <div className="fw-bold">{expense.title}</div>
                         <small className="text-muted">
-                          {expense.expense_type} • {expense.payment_method}
+                          {expense.category_name} • {getPaymentMethodLabel(expense.payment_method)}
                         </small>
                         {expense.category_name && (
                           <Badge 
