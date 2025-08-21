@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Nav, Dropdown } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaWallet, FaCreditCard, FaHome, FaPlus, FaList, FaChevronDown } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaWallet, FaCreditCard, FaHome, FaPlus, FaList, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 const SidebarNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  
+  // Akordion state'leri
+  const [expandedSections, setExpandedSections] = useState({
+    dashboard: true,
+    transactions: true,
+    data: true,
+    reports: true
+  });
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -16,6 +24,13 @@ const SidebarNavigation = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   return (
@@ -31,99 +46,131 @@ const SidebarNavigation = () => {
       {/* Ana Navigasyon */}
       <Nav className="sidebar-nav flex-column">
         <div className="nav-section">
-          <h6 className="nav-section-title">📊 Dashboard</h6>
-          <Nav.Link 
-            as={Link} 
-            to="/dashboard" 
-            className={`sidebar-nav-link ${isActive('/dashboard') ? 'active' : ''}`}
-          >
-            <FaChartLine className="nav-icon" />
-            <span>Ana Sayfa</span>
-          </Nav.Link>
+          <div className="nav-section-header" onClick={() => toggleSection('dashboard')}>
+            <h6 className="nav-section-title">📊 Dashboard</h6>
+            <div className="section-toggle">
+              {expandedSections.dashboard ? <FaChevronDown /> : <FaChevronRight />}
+            </div>
+          </div>
+          {expandedSections.dashboard && (
+            <Nav.Link 
+              as={Link} 
+              to="/dashboard" 
+              className={`sidebar-nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+            >
+              <FaChartLine className="nav-icon" />
+              <span>Ana Sayfa</span>
+            </Nav.Link>
+          )}
         </div>
 
         <div className="nav-section">
-          <h6 className="nav-section-title">➕ İşlemler</h6>
-          <Nav.Link 
-            as={Link} 
-            to="/accounts/new" 
-            className={`sidebar-nav-link ${isActive('/accounts/new') ? 'active' : ''}`}
-          >
-            <FaPlus className="nav-icon" />
-            <span>Yeni Hesap</span>
-          </Nav.Link>
-          <Nav.Link 
-            as={Link} 
-            to="/credit-cards/new" 
-            className={`sidebar-nav-link ${isActive('/credit-cards/new') ? 'active' : ''}`}
-          >
-            <FaPlus className="nav-icon" />
-            <span>Yeni Kart</span>
-          </Nav.Link>
-          <Nav.Link 
-            as={Link} 
-            to="/incomes/new" 
-            className={`sidebar-nav-link ${isActive('/incomes/new') ? 'active' : ''}`}
-          >
-            <FaPlus className="nav-icon" />
-            <span>Gelir Kaydı</span>
-          </Nav.Link>
-          <Nav.Link 
-            as={Link} 
-            to="/expenses/new" 
-            className={`sidebar-nav-link ${isActive('/expenses/new') ? 'active' : ''}`}
-          >
-            <FaPlus className="nav-icon" />
-            <span>Gider Kaydı</span>
-          </Nav.Link>
+          <div className="nav-section-header" onClick={() => toggleSection('transactions')}>
+            <h6 className="nav-section-title">➕ İşlemler</h6>
+            <div className="section-toggle">
+              {expandedSections.transactions ? <FaChevronDown /> : <FaChevronRight />}
+            </div>
+          </div>
+          {expandedSections.transactions && (
+            <>
+              <Nav.Link 
+                as={Link} 
+                to="/accounts/new" 
+                className={`sidebar-nav-link ${isActive('/accounts/new') ? 'active' : ''}`}
+              >
+                <FaPlus className="nav-icon" />
+                <span>Yeni Hesap</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/credit-cards/new" 
+                className={`sidebar-nav-link ${isActive('/credit-cards/new') ? 'active' : ''}`}
+              >
+                <FaPlus className="nav-icon" />
+                <span>Yeni Kart</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/incomes/new" 
+                className={`sidebar-nav-link ${isActive('/incomes/new') ? 'active' : ''}`}
+              >
+                <FaPlus className="nav-icon" />
+                <span>Gelir Kaydı</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/expenses/new" 
+                className={`sidebar-nav-link ${isActive('/expenses/new') ? 'active' : ''}`}
+              >
+                <FaPlus className="nav-icon" />
+                <span>Gider Kaydı</span>
+              </Nav.Link>
+            </>
+          )}
         </div>
 
         <div className="nav-section">
-          <h6 className="nav-section-title">📋 Veriler</h6>
-          <Nav.Link 
-            as={Link} 
-            to="/incomes" 
-            className={`sidebar-nav-link ${isActive('/incomes') ? 'active' : ''}`}
-          >
-            <FaList className="nav-icon" />
-            <span>Gelir Listesi</span>
-          </Nav.Link>
-          <Nav.Link 
-            as={Link} 
-            to="/expenses" 
-            className={`sidebar-nav-link ${isActive('/expenses') ? 'active' : ''}`}
-          >
-            <FaList className="nav-icon" />
-            <span>Gider Listesi</span>
-          </Nav.Link>
-          <Nav.Link 
-            as={Link} 
-            to="/accounts" 
-            className={`sidebar-nav-link ${isActive('/accounts') ? 'active' : ''}`}
-          >
-            <FaList className="nav-icon" />
-            <span>Hesap Listesi</span>
-          </Nav.Link>
-          <Nav.Link 
-            as={Link} 
-            to="/credit-cards" 
-            className={`sidebar-nav-link ${isActive('/credit-cards') ? 'active' : ''}`}
-          >
-            <FaList className="nav-icon" />
-            <span>Kart Listesi</span>
-          </Nav.Link>
+          <div className="nav-section-header" onClick={() => toggleSection('data')}>
+            <h6 className="nav-section-title">📋 Veriler</h6>
+            <div className="section-toggle">
+              {expandedSections.data ? <FaChevronDown /> : <FaChevronRight />}
+            </div>
+          </div>
+          {expandedSections.data && (
+            <>
+              <Nav.Link 
+                as={Link} 
+                to="/incomes" 
+                className={`sidebar-nav-link ${isActive('/incomes') ? 'active' : ''}`}
+              >
+                <FaList className="nav-icon" />
+                <span>Gelir Listesi</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/expenses" 
+                className={`sidebar-nav-link ${isActive('/expenses') ? 'active' : ''}`}
+              >
+                <FaList className="nav-icon" />
+                <span>Gider Listesi</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/accounts" 
+                className={`sidebar-nav-link ${isActive('/accounts') ? 'active' : ''}`}
+              >
+                <FaList className="nav-icon" />
+                <span>Hesap Listesi</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/credit-cards" 
+                className={`sidebar-nav-link ${isActive('/credit-cards') ? 'active' : ''}`}
+              >
+                <FaList className="nav-icon" />
+                <span>Kart Listesi</span>
+              </Nav.Link>
+            </>
+          )}
         </div>
 
         <div className="nav-section">
-          <h6 className="nav-section-title">📈 Raporlar</h6>
-          <Nav.Link 
-            as={Link} 
-            to="/analytics" 
-            className={`sidebar-nav-link ${isActive('/analytics') ? 'active' : ''}`}
-          >
-            <FaChartLine className="nav-icon" />
-            <span>Analiz & Raporlar</span>
-          </Nav.Link>
+          <div className="nav-section-header" onClick={() => toggleSection('reports')}>
+            <h6 className="nav-section-title">📈 Raporlar</h6>
+            <div className="section-toggle">
+              {expandedSections.reports ? <FaChevronDown /> : <FaChevronRight />}
+            </div>
+          </div>
+          {expandedSections.reports && (
+            <Nav.Link 
+              as={Link} 
+              to="/analytics" 
+              className={`sidebar-nav-link ${isActive('/analytics') ? 'active' : ''}`}
+            >
+              <FaChartLine className="nav-icon" />
+              <span>Analiz & Raporlar</span>
+            </Nav.Link>
+          )}
         </div>
       </Nav>
 
