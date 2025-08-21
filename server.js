@@ -863,15 +863,17 @@ app.post('/api/banks', (req, res) => {
 });
 
 // Hesapları getir
-app.get('/api/accounts', (req, res) => {
+app.get('/api/accounts', authenticateToken, (req, res) => {
+  const userId = req.user.user_id;
   const query = `
     SELECT a.*, b.bank_name 
     FROM accounts a 
     JOIN banks b ON a.bank_id = b.id 
+    WHERE a.user_id = ?
     ORDER BY a.created_at DESC
   `;
   
-  connection.query(query, (err, results) => {
+  connection.query(query, [userId], (err, results) => {
     if (err) {
       console.error('Hesaplar getirme hatası:', err);
       res.status(500).json({ error: 'Hesaplar getirilemedi' });
@@ -882,8 +884,9 @@ app.get('/api/accounts', (req, res) => {
 });
 
 // Yeni hesap ekle
-app.post('/api/accounts', (req, res) => {
+app.post('/api/accounts', authenticateToken, (req, res) => {
   const { bank_id, account_name, account_number, iban, account_type, account_limit, current_balance, is_credit_account, credit_limit } = req.body;
+  const userId = req.user.user_id;
   
   // Boş string değerleri NULL veya 0 olarak değiştir
   const cleanAccountLimit = account_limit === '' ? null : parseFloat(account_limit) || 0;
@@ -891,11 +894,11 @@ app.post('/api/accounts', (req, res) => {
   const cleanCurrentBalance = parseFloat(current_balance) || 0;
   
   const query = `
-    INSERT INTO accounts (bank_id, account_name, account_number, iban, account_type, account_limit, current_balance, is_credit_account, credit_limit) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO accounts (user_id, bank_id, account_name, account_number, iban, account_type, account_limit, current_balance, is_credit_account, credit_limit) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  connection.query(query, [bank_id, account_name, account_number, iban, account_type, cleanAccountLimit, cleanCurrentBalance, is_credit_account, cleanCreditLimit], (err, result) => {
+  connection.query(query, [userId, bank_id, account_name, account_number, iban, account_type, cleanAccountLimit, cleanCurrentBalance, is_credit_account, cleanCreditLimit], (err, result) => {
     if (err) {
       console.error('Hesap ekleme hatası:', err);
       res.status(500).json({ error: 'Hesap eklenemedi' });
@@ -928,15 +931,17 @@ app.put('/api/accounts/:id', (req, res) => {
 });
 
 // Kredi kartlarını getir
-app.get('/api/credit-cards', (req, res) => {
+app.get('/api/credit-cards', authenticateToken, (req, res) => {
+  const userId = req.user.user_id;
   const query = `
     SELECT c.*, b.bank_name 
     FROM credit_cards c 
     JOIN banks b ON c.bank_id = b.id 
+    WHERE c.user_id = ?
     ORDER BY c.created_at DESC
   `;
   
-  connection.query(query, (err, results) => {
+  connection.query(query, [userId], (err, results) => {
     if (err) {
       console.error('Kredi kartları getirme hatası:', err);
       res.status(500).json({ error: 'Kredi kartları getirilemedi' });
@@ -947,19 +952,20 @@ app.get('/api/credit-cards', (req, res) => {
 });
 
 // Yeni kredi kartı ekle
-app.post('/api/credit-cards', (req, res) => {
+app.post('/api/credit-cards', authenticateToken, (req, res) => {
   const { bank_id, card_name, card_number, card_limit, remaining_limit, statement_date } = req.body;
+  const userId = req.user.user_id;
   
   // Boş string değerleri 0 olarak değiştir
   const cleanCardLimit = parseFloat(card_limit) || 0;
   const cleanRemainingLimit = parseFloat(remaining_limit) || 0;
   
   const query = `
-    INSERT INTO credit_cards (bank_id, card_name, card_number, card_limit, remaining_limit, statement_date) 
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO credit_cards (user_id, bank_id, card_name, card_number, card_limit, remaining_limit, statement_date) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   
-  connection.query(query, [bank_id, card_name, card_number, cleanCardLimit, cleanRemainingLimit, statement_date], (err, result) => {
+  connection.query(query, [userId, bank_id, card_name, card_number, cleanCardLimit, cleanRemainingLimit, statement_date], (err, result) => {
     if (err) {
       console.error('Kredi kartı ekleme hatası:', err);
       res.status(500).json({ error: 'Kredi kartı eklenemedi' });
@@ -992,16 +998,17 @@ app.put('/api/credit-cards/:id', (req, res) => {
 
 
 // Gelir ekleme
-app.post('/api/incomes', async (req, res) => {
+app.post('/api/incomes', authenticateToken, async (req, res) => {
     try {
         const { title, amount, income_type, source, description, income_date } = req.body;
+        const userId = req.user.user_id;
         
         const query = `
-            INSERT INTO incomes (title, amount, income_type, source, description, income_date) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO incomes (user_id, title, amount, income_type, source, description, income_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         
-        const [result] = await connection.promise().execute(query, [title, amount, income_type, source, description, income_date]);
+        const [result] = await connection.promise().execute(query, [userId, title, amount, income_type, source, description, income_date]);
         
         res.status(201).json({
             success: true,
@@ -1015,10 +1022,11 @@ app.post('/api/incomes', async (req, res) => {
 });
 
 // Gelirleri listele
-app.get('/api/incomes', async (req, res) => {
+app.get('/api/incomes', authenticateToken, async (req, res) => {
     try {
-        const query = 'SELECT * FROM incomes ORDER BY income_date DESC';
-        const [rows] = await connection.promise().execute(query);
+        const userId = req.user.user_id;
+        const query = 'SELECT * FROM incomes WHERE user_id = ? ORDER BY income_date DESC';
+        const [rows] = await connection.promise().execute(query, [userId]);
         res.json({ success: true, incomes: rows });
     } catch (error) {
         console.error('Gelir listeleme hatası:', error);
@@ -1039,7 +1047,7 @@ app.get('/api/expense-categories', async (req, res) => {
 });
 
 // Gider ekleme
-app.post('/api/expenses', async (req, res) => {
+app.post('/api/expenses', authenticateToken, async (req, res) => {
     try {
         const {
             title, amount, category_id, expense_type, payment_method,
@@ -1057,16 +1065,17 @@ app.post('/api/expenses', async (req, res) => {
         const cleanPaymentDate = payment_date === '' ? null : payment_date;
         
         const query = `
-            INSERT INTO expenses (title, amount, category_id, expense_type, payment_method,
+            INSERT INTO expenses (user_id, title, amount, category_id, expense_type, payment_method,
                                 related_account_id, related_credit_card_id, related_credit_account_id,
                                 due_date, payment_date, description, is_paid) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         const is_paid = cleanPaymentDate ? true : false;
+        const userId = req.user.user_id;
         
         const [result] = await connection.promise().execute(query, [
-            title, amount, category_id, expense_type, payment_method,
+            userId, title, amount, category_id, expense_type, payment_method,
             cleanRelatedAccountId, cleanRelatedCreditCardId, cleanRelatedCreditAccountId,
             cleanDueDate, cleanPaymentDate, description, is_paid
         ]);
@@ -1197,8 +1206,9 @@ app.post('/api/credit-payments', async (req, res) => {
 });
 
 // Giderleri listele
-app.get('/api/expenses', async (req, res) => {
+app.get('/api/expenses', authenticateToken, async (req, res) => {
     try {
+        const userId = req.user.user_id;
         const query = `
             SELECT e.*, ec.name as category_name, ec.color as category_color,
                    a.account_name, cc.card_name
@@ -1206,9 +1216,10 @@ app.get('/api/expenses', async (req, res) => {
             LEFT JOIN expense_categories ec ON e.category_id = ec.id
             LEFT JOIN accounts a ON e.related_account_id = a.id
             LEFT JOIN credit_cards cc ON e.related_credit_card_id = cc.id
+            WHERE e.user_id = ?
             ORDER BY e.created_at DESC
         `;
-        const [rows] = await connection.promise().execute(query);
+        const [rows] = await connection.promise().execute(query, [userId]);
         res.json({ success: true, expenses: rows });
     } catch (error) {
         console.error('Gider listeleme hatası:', error);
@@ -1217,60 +1228,65 @@ app.get('/api/expenses', async (req, res) => {
 });
 
 // Detaylı analiz verileri
-app.get('/api/analytics', async (req, res) => {
+app.get('/api/analytics', authenticateToken, async (req, res) => {
     try {
-        // Toplam gelir
-        const [totalIncomeResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM incomes');
+        const userId = req.user.user_id;
+        
+        // Toplam gelir (sadece kullanıcının)
+        const [totalIncomeResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM incomes WHERE user_id = ?', [userId]);
         const totalIncome = totalIncomeResult[0].total || 0;
         
-        // Toplam gider
-        const [totalExpenseResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM expenses');
+        // Toplam gider (sadece kullanıcının)
+        const [totalExpenseResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM expenses WHERE user_id = ?', [userId]);
         const totalExpense = totalExpenseResult[0].total || 0;
         
         // Net gelir
         const netIncome = totalIncome - totalExpense;
         
-        // Kategori bazında gider dağılımı
+        // Kategori bazında gider dağılımı (sadece kullanıcının)
         const [categoryExpenses] = await connection.promise().execute(`
             SELECT ec.name, ec.color, SUM(e.amount) as total
             FROM expenses e
             JOIN expense_categories ec ON e.category_id = ec.id
+            WHERE e.user_id = ?
             GROUP BY ec.id, ec.name, ec.color
             ORDER BY total DESC
-        `);
+        `, [userId]);
         
-        // Aylık gelir-gider trendi (yemek kartı hariç)
+        // Aylık gelir-gider trendi (sadece kullanıcının, yemek kartı hariç)
         const [monthlyTrend] = await connection.promise().execute(`
             SELECT 
                 months.month,
                 SUM(COALESCE(i.amount, 0)) as income,
                 SUM(COALESCE(e.amount, 0)) as expense
             FROM (
-                SELECT DISTINCT DATE_FORMAT(income_date, '%Y-%m') as month FROM incomes WHERE income_type != 'food_card'
+                SELECT DISTINCT DATE_FORMAT(income_date, '%Y-%m') as month FROM incomes WHERE user_id = ? AND income_type != 'food_card'
                 UNION
-                SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month FROM expenses
+                SELECT DISTINCT DATE_FORMAT(created_at, '%Y-%m') as month FROM expenses WHERE user_id = ?
             ) months
-            LEFT JOIN incomes i ON DATE_FORMAT(i.income_date, '%Y-%m') = months.month AND i.income_type != 'food_card'
-            LEFT JOIN expenses e ON DATE_FORMAT(e.created_at, '%Y-%m') = months.month
+            LEFT JOIN incomes i ON DATE_FORMAT(i.income_date, '%Y-%m') = months.month AND i.user_id = ? AND i.income_type != 'food_card'
+            LEFT JOIN expenses e ON DATE_FORMAT(e.created_at, '%Y-%m') = months.month AND e.user_id = ?
             GROUP BY months.month
             ORDER BY months.month DESC
             LIMIT 12
-        `);
+        `, [userId, userId, userId, userId]);
         
-        // Kullanılabilir limitler
+        // Kullanılabilir limitler (sadece kullanıcının)
         const [availableLimits] = await connection.promise().execute(`
             SELECT 
                 'accounts' as type,
                 SUM(current_balance) as total_available,
                 COUNT(*) as count
             FROM accounts
+            WHERE user_id = ?
             UNION ALL
             SELECT 
                 'credit_cards' as type,
                 SUM(remaining_limit) as total_available,
                 COUNT(*) as count
             FROM credit_cards
-        `);
+            WHERE user_id = ?
+        `, [userId, userId]);
         
         res.json({
             success: true,
@@ -1292,76 +1308,82 @@ app.get('/api/analytics', async (req, res) => {
 // Dashboard verilerini güncelle
 app.get('/api/dashboard', authenticateToken, async (req, res) => {
     try {
-        // Toplam hesap sayısı
-        const [accountsResult] = await connection.promise().execute('SELECT COUNT(*) as total FROM accounts');
+        const userId = req.user.user_id;
+        
+        // Toplam hesap sayısı (sadece kullanıcının)
+        const [accountsResult] = await connection.promise().execute('SELECT COUNT(*) as total FROM accounts WHERE user_id = ?', [userId]);
         const totalAccounts = accountsResult[0].total;
         
-        // Toplam kredi kartı sayısı
-        const [creditCardsResult] = await connection.promise().execute('SELECT COUNT(*) as total FROM credit_cards');
+        // Toplam kredi kartı sayısı (sadece kullanıcının)
+        const [creditCardsResult] = await connection.promise().execute('SELECT COUNT(*) as total FROM credit_cards WHERE user_id = ?', [userId]);
         const totalCreditCards = creditCardsResult[0].total;
         
-        // Toplam hesap bakiyesi
-        const [totalBalanceResult] = await connection.promise().execute('SELECT SUM(current_balance) as total FROM accounts');
+        // Toplam hesap bakiyesi (sadece kullanıcının)
+        const [totalBalanceResult] = await connection.promise().execute('SELECT SUM(current_balance) as total FROM accounts WHERE user_id = ?', [userId]);
         const totalBalance = totalBalanceResult[0].total || 0;
         
-        // Toplam kredi kartı limiti
-        const [totalCreditLimitResult] = await connection.promise().execute('SELECT SUM(card_limit) as total FROM credit_cards');
+        // Toplam kredi kartı limiti (sadece kullanıcının)
+        const [totalCreditLimitResult] = await connection.promise().execute('SELECT SUM(card_limit) as total FROM credit_cards WHERE user_id = ?', [userId]);
         const totalCreditLimit = totalCreditLimitResult[0].total || 0;
         
-        // Kullanılabilir kredi kartı limiti
-        const [availableCreditLimitResult] = await connection.promise().execute('SELECT SUM(remaining_limit) as total FROM credit_cards');
+        // Kullanılabilir kredi kartı limiti (sadece kullanıcının)
+        const [availableCreditLimitResult] = await connection.promise().execute('SELECT SUM(remaining_limit) as total FROM credit_cards WHERE user_id = ?', [userId]);
         const availableCreditLimit = availableCreditLimitResult[0].total || 0;
         
-        // Toplam gelir (yemek kartı hariç)
-        const [totalIncomeResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM incomes WHERE income_type != "food_card"');
+        // Toplam gelir (sadece kullanıcının, yemek kartı hariç)
+        const [totalIncomeResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM incomes WHERE user_id = ? AND income_type != "food_card"', [userId]);
         const totalIncome = totalIncomeResult[0].total || 0;
         
-        // Toplam gider
-        const [totalExpenseResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM expenses');
+        // Toplam gider (sadece kullanıcının)
+        const [totalExpenseResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM expenses WHERE user_id = ?', [userId]);
         const totalExpense = totalExpenseResult[0].total || 0;
         
         // Net gelir
         const netIncome = totalIncome - totalExpense;
         
-        // Yemek kartı geliri (ayrı hesaplama)
-        const [foodCardIncomeResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM incomes WHERE income_type = "food_card"');
+        // Yemek kartı geliri (sadece kullanıcının)
+        const [foodCardIncomeResult] = await connection.promise().execute('SELECT SUM(amount) as total FROM incomes WHERE user_id = ? AND income_type = "food_card"', [userId]);
         const foodCardIncome = foodCardIncomeResult[0].total || 0;
         
-        // Son işlemler - Son 5 gelir
+        // Son işlemler - Son 5 gelir (sadece kullanıcının)
         const [recentIncomes] = await connection.promise().execute(`
             SELECT id, title, amount, income_type, source, income_date, created_at
             FROM incomes 
+            WHERE user_id = ?
             ORDER BY created_at DESC 
             LIMIT 5
-        `);
+        `, [userId]);
         
-        // Son işlemler - Son 5 gider
+        // Son işlemler - Son 5 gider (sadece kullanıcının)
         const [recentExpenses] = await connection.promise().execute(`
             SELECT e.id, e.title, e.amount, e.expense_type, e.payment_method, e.created_at,
                    ec.name as category_name, ec.color as category_color
             FROM expenses e
             LEFT JOIN expense_categories ec ON e.category_id = ec.id
+            WHERE e.user_id = ?
             ORDER BY e.created_at DESC 
             LIMIT 5
-        `);
+        `, [userId]);
         
-        // Son işlemler - Son 5 hesap işlemi
+        // Son işlemler - Son 5 hesap işlemi (sadece kullanıcının)
         const [recentAccounts] = await connection.promise().execute(`
             SELECT a.id, a.account_name, a.current_balance, a.created_at, b.bank_name
             FROM accounts a
             LEFT JOIN banks b ON a.bank_id = b.id
+            WHERE a.user_id = ?
             ORDER BY a.created_at DESC 
             LIMIT 5
-        `);
+        `, [userId]);
         
-        // Son işlemler - Son 5 kredi kartı işlemi
+        // Son işlemler - Son 5 kredi kartı işlemi (sadece kullanıcının)
         const [recentCreditCards] = await connection.promise().execute(`
             SELECT cc.id, cc.card_name, cc.remaining_limit, cc.created_at, b.bank_name
             FROM credit_cards cc
             LEFT JOIN banks b ON cc.bank_id = b.id
+            WHERE cc.user_id = ?
             ORDER BY cc.created_at DESC 
             LIMIT 5
-        `);
+        `, [userId]);
         
         res.json({
             success: true,

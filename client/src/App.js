@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Navigation from './components/Navigation';
+import SidebarNavigation from './components/SidebarNavigation';
 import WelcomePage from './components/WelcomePage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
@@ -54,102 +54,102 @@ function App() {
             {/* Protected Routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <Dashboard />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/accounts/new" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <AccountForm />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/credit-cards/new" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <CreditCardForm />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/accounts" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <AccountsList />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/credit-cards" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <CreditCardsList />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/incomes" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <IncomesList />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/incomes/new" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <IncomeForm />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/expenses" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <ExpensesList />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/expenses/new" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <ExpenseForm />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/analytics" element={
               <ProtectedRoute>
-                <>
-                  <Navigation />
-                  <div className="container mt-4">
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
                     <Analytics />
                   </div>
-                </>
+                </div>
               </ProtectedRoute>
             } />
           </Routes>
