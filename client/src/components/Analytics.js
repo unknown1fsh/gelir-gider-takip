@@ -3,6 +3,7 @@ import { Card, Row, Col, Badge, ProgressBar, Alert, Spinner, Button } from 'reac
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FaCheckCircle, FaExclamationTriangle, FaLightbulb, FaRobot } from 'react-icons/fa';
+import BackButton from './BackButton';
 
 const Analytics = () => {
     const [analytics, setAnalytics] = useState(null);
@@ -293,6 +294,7 @@ const Analytics = () => {
 
     return (
         <div className="container mt-4">
+            <BackButton />
             <h2 className="mb-4">📊 Finansal Analiz</h2>
 
             {/* Genel Özet */}

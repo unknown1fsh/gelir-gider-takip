@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Button, Spinner, Alert, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -247,6 +248,7 @@ const Dashboard = () => {
 
   return (
     <div className="container mt-4">
+      <BackButton />
       <h1 className="mb-4">💰 Gelir-Gider Takip Dashboard</h1>
 
       {/* Hızlı Erişim Butonları */}

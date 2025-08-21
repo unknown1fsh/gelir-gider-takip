@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Card, Alert, Row, Col, Modal } from 'react-bootstrap';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const ExpenseForm = () => {
     const [formData, setFormData] = useState({
@@ -48,24 +49,88 @@ const ExpenseForm = () => {
     const [creditCards, setCreditCards] = useState([]);
     const [showRentModal, setShowRentModal] = useState(false);
     const [showCreditModal, setShowCreditModal] = useState(false);
+    
+    // API çağrı kontrolü için ref
+    const categoriesLoaded = useRef(false);
 
     useEffect(() => {
+        // Kategoriler daha önce yüklendiyse tekrar yükleme
+        if (categoriesLoaded.current) {
+            console.log('🔄 Kategoriler zaten yüklendi, tekrar yüklenmeyecek');
+            return;
+        }
+        
+        // Force cache temizleme
+        setCategories([]);
+        
+        // Tüm localStorage cache'ini temizle
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('category') || key.includes('cache') || key.includes('expense') || key.includes('api')) {
+                localStorage.removeItem(key);
+            }
+        });
+        
+        // SessionStorage'ı da temizle
+        sessionStorage.clear();
+        
+        // IndexedDB'yi de temizle (varsa)
+        if ('indexedDB' in window) {
+            indexedDB.databases().then(databases => {
+                databases.forEach(db => {
+                    if (db.name.includes('category') || db.name.includes('cache')) {
+                        indexedDB.deleteDatabase(db.name);
+                    }
+                });
+            });
+        }
+        
+        // Kategorileri yeniden yükle
         fetchCategories();
         fetchAccounts();
         fetchCreditCards();
+        
+        // Kategoriler yüklendi olarak işaretle
+        categoriesLoaded.current = true;
     }, []);
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get('/api/expense-categories');
+            // Force cache bypass - her seferinde farklı parametreler
+            const timestamp = new Date().getTime();
+            const random = Math.random();
+            const version = Math.floor(Math.random() * 10000);
+            
+            console.log('🔍 Kategoriler yükleniyor...', { timestamp, random, version });
+            
+            const response = await axios.get(`/api/expense-categories?t=${timestamp}&r=${random}&v=${version}&nocache=true`, {
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'If-Modified-Since': '0',
+                    'If-None-Match': '*'
+                }
+            });
+            
+            console.log('📡 API Response:', response.data);
+            
             // Backend { success: true, categories: [...] } formatında döndürüyor
             if (response.data.success && response.data.categories) {
-                setCategories(response.data.categories);
+                // Kategorileri sadece unique olanları al ve sadece ilk 8'ini al
+                const uniqueCategories = response.data.categories
+                    .filter((category, index, self) => 
+                        index === self.findIndex(c => c.id === category.id && c.name === category.name)
+                    )
+                    .slice(0, 8); // Sadece ilk 8 kategori
+                
+                console.log(`✅ Frontend'de yüklenen kategoriler: ${uniqueCategories.length} adet (sadece ilk 8)`);
+                setCategories(uniqueCategories);
             } else {
+                console.log('❌ Kategoriler bulunamadı');
                 setCategories([]);
             }
         } catch (error) {
-            console.error('Kategoriler yüklenirken hata:', error);
+            console.error('❌ Kategoriler yüklenirken hata:', error);
             setCategories([]);
         }
     };
@@ -226,6 +291,7 @@ const ExpenseForm = () => {
 
     return (
         <div className="container mt-4">
+            <BackButton />
             <Card className="shadow">
                 <Card.Header className="bg-danger text-white">
                     <h4 className="mb-0">💸 Yeni Gider Ekle</h4>

@@ -305,33 +305,8 @@ function createTables() {
     }
   });
 
-  // Varsayılan gider kategorileri ekle
-  const insertDefaultCategories = `
-    INSERT IGNORE INTO expense_categories (name, color) VALUES
-    ('Gıda', '#28a745'),
-    ('Ulaşım', '#007bff'),
-    ('Ev Giderleri', '#dc3545'),
-    ('Sağlık', '#ffc107'),
-    ('Eğlence', '#6f42c1'),
-    ('Giyim', '#fd7e14'),
-    ('Eğitim', '#20c997'),
-    ('Spor', '#e83e8c'),
-    ('Teknoloji', '#6c757d'),
-    ('Seyahat', '#17a2b8'),
-    ('Sigorta', '#6610f2'),
-    ('Vergi', '#dc3545'),
-    ('Kredi Ödemeleri', '#fd7e14'),
-    ('Yatırım', '#28a745'),
-    ('Diğer', '#6c757d')
-  `;
-
-  connection.query(insertDefaultCategories, (err) => {
-    if (err) {
-      console.error('Varsayılan kategoriler ekleme hatası:', err);
-    } else {
-      console.log('✅ Varsayılan gider kategorileri eklendi');
-    }
-  });
+  // Varsayılan gider kategorileri setup_database.sql dosyasından ekleniyor
+  // Burada tekrar eklemeye gerek yok
 }
 
 // API Routes
@@ -1037,11 +1012,43 @@ app.get('/api/incomes', authenticateToken, async (req, res) => {
 // Gider kategorilerini listele
 app.get('/api/expense-categories', async (req, res) => {
     try {
-        const query = 'SELECT * FROM expense_categories ORDER BY name';
+        // Force cache devre dışı bırak
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Last-Modified': new Date().toUTCString(),
+            'ETag': `"${Date.now()}"`
+        });
+        
+        // Önce tabloyu temizle ve sadece 8 kategori ekle
+        await connection.promise().execute('DELETE FROM expense_categories');
+        await connection.promise().execute('ALTER TABLE expense_categories AUTO_INCREMENT = 1');
+        
+        // Sadece 8 temel kategoriyi ekle
+        const insertQuery = `
+            INSERT INTO expense_categories (name, color, icon) VALUES 
+            ('Gıda', '#28a745', '🍽️'),
+            ('Ulaşım', '#007bff', '🚗'),
+            ('Ev Giderleri', '#ffc107', '🏠'),
+            ('Sağlık', '#dc3545', '🏥'),
+            ('Eğlence', '#6f42c1', '🎮'),
+            ('Alışveriş', '#fd7e14', '🛍️'),
+            ('Faturalar', '#20c997', '📄'),
+            ('Diğer', '#6c757d', '📌')
+        `;
+        
+        await connection.promise().execute(insertQuery);
+        
+        // Şimdi kategorileri al
+        const query = 'SELECT id, name, color FROM expense_categories ORDER BY name';
         const [rows] = await connection.promise().execute(query);
+        
+        console.log(`📊 Kategoriler yeniden oluşturuldu: ${rows.length} adet`);
+        
         res.json({ success: true, categories: rows });
     } catch (error) {
-        console.error('Kategori listeleme hatası:', error);
+        console.error('❌ Kategori listeleme hatası:', error);
         res.status(500).json({ success: false, message: 'Kategoriler listelenirken hata oluştu' });
     }
 });

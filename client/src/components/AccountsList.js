@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, Table, Button, Badge, Modal, Form, Alert, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const AccountsList = () => {
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ const AccountsList = () => {
 
   return (
     <div>
+      <BackButton />
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>🏦 Banka Hesapları</h2>
         <Button variant="primary" onClick={() => navigate('/hesap-ekle')}>

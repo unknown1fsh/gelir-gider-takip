@@ -2,11 +2,11 @@
 -- MySQL 8.0+ için uyumlu
 
 -- Veritabanını oluştur
-CREATE DATABASE IF NOT EXISTS `income_expense_tracker` 
+CREATE DATABASE IF NOT EXISTS `gelir_gider_takip` 
 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Veritabanını kullan
-USE `income_expense_tracker`;
+USE `gelir_gider_takip`;
 
 -- Banks tablosu
 CREATE TABLE IF NOT EXISTS `banks` (
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `incomes` (
 -- Expense Categories tablosu
 CREATE TABLE IF NOT EXISTS `expense_categories` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(100) NOT NULL,
+  `name` VARCHAR(100) NOT NULL UNIQUE,
   `color` VARCHAR(7) DEFAULT '#007bff',
   `icon` VARCHAR(50),
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -131,26 +131,26 @@ CREATE TABLE IF NOT EXISTS `expenses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- İndeksler ekle (performans için)
-CREATE INDEX `idx_accounts_user_id` ON `accounts`(`user_id`);
-CREATE INDEX `idx_accounts_bank_id` ON `accounts`(`bank_id`);
-CREATE INDEX `idx_accounts_account_type` ON `accounts`(`account_type`);
-CREATE INDEX `idx_accounts_is_credit_account` ON `accounts`(`is_credit_account`);
-CREATE INDEX `idx_credit_cards_user_id` ON `credit_cards`(`user_id`);
-CREATE INDEX `idx_credit_cards_bank_id` ON `credit_cards`(`bank_id`);
-CREATE INDEX `idx_credit_cards_statement_date` ON `credit_cards`(`statement_date`);
-CREATE INDEX `idx_incomes_user_id` ON `incomes`(`user_id`);
-CREATE INDEX `idx_incomes_income_date` ON `incomes`(`income_date`);
-CREATE INDEX `idx_expenses_user_id` ON `expenses`(`user_id`);
-CREATE INDEX `idx_expenses_payment_date` ON `expenses`(`payment_date`);
-CREATE INDEX `idx_expenses_category_id` ON `expenses`(`category_id`);
+-- CREATE INDEX `idx_accounts_user_id` ON `accounts`(`user_id`);
+-- CREATE INDEX `idx_accounts_bank_id` ON `accounts`(`bank_id`);
+-- CREATE INDEX `idx_accounts_account_type` ON `accounts`(`account_type`);
+-- CREATE INDEX `idx_accounts_is_credit_account` ON `accounts`(`is_credit_account`);
+-- CREATE INDEX `idx_credit_cards_user_id` ON `credit_cards`(`user_id`);
+-- CREATE INDEX `idx_credit_cards_bank_id` ON `credit_cards`(`bank_id`);
+-- CREATE INDEX `idx_credit_cards_statement_date` ON `credit_cards`(`statement_date`);
+-- CREATE INDEX `idx_incomes_user_id` ON `incomes`(`user_id`);
+-- CREATE INDEX `idx_incomes_income_date` ON `incomes`(`income_date`);
+-- CREATE INDEX `idx_expenses_user_id` ON `expenses`(`user_id`);
+-- CREATE INDEX `idx_expenses_payment_date` ON `expenses`(`payment_date`);
+-- CREATE INDEX `idx_expenses_category_id` ON `expenses`(`category_id`);
 
 -- Veritabanı kullanıcı yetkileri (güvenlik için)
 -- Bu komutları sadece gerekirse çalıştırın
--- GRANT ALL PRIVILEGES ON `income_expense_tracker`.* TO 'root'@'localhost';
+-- GRANT ALL PRIVILEGES ON `gelir_gider_takip`.* TO 'root'@'localhost';
 -- FLUSH PRIVILEGES;
 
--- Temel gider kategorilerini ekle
-INSERT INTO `expense_categories` (`name`, `color`, `icon`) VALUES
+-- Temel gider kategorilerini ekle (sadece yoksa)
+INSERT IGNORE INTO `expense_categories` (`name`, `color`, `icon`) VALUES
 ('Gıda', '#28a745', '🍽️'),
 ('Ulaşım', '#007bff', '🚗'),
 ('Ev Giderleri', '#ffc107', '🏠'),
@@ -171,4 +171,4 @@ SELECT
   'Tables Created' as Info,
   COUNT(*) as Table_Count
 FROM information_schema.tables 
-WHERE table_schema = 'income_expense_tracker';
+WHERE table_schema = 'gelir_gider_takip';

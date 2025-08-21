@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, Table, Button, Badge, Modal, Form, Alert, Row, Col, ProgressBar } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const CreditCardsList = () => {
   const navigate = useNavigate();
@@ -123,6 +124,7 @@ const CreditCardsList = () => {
 
   return (
     <div>
+      <BackButton />
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>💳 Kredi Kartları</h2>
         <Button variant="success" onClick={() => navigate('/kredi-karti-ekle')}>

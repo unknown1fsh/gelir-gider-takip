@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const CreditCardForm = () => {
   const navigate = useNavigate();
@@ -141,6 +142,7 @@ const CreditCardForm = () => {
 
   return (
     <div>
+      <BackButton />
       <h2 className="mb-4 text-center">💳 Yeni Kredi Kartı Ekle</h2>
       
       <Row className="justify-content-center">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Button, Card, Alert, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const IncomeForm = () => {
     const [formData, setFormData] = useState({
@@ -62,6 +63,7 @@ const IncomeForm = () => {
 
     return (
         <div className="container mt-4">
+            <BackButton />
             <Card className="shadow">
                 <Card.Header className="bg-primary text-white">
                     <h4 className="mb-0">💰 Yeni Gelir Ekle</h4>

@@ -3,6 +3,7 @@ import { Card, Table, Badge, Button, Modal, Alert } from 'react-bootstrap';
 import { FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BackButton from './BackButton';
 
 const IncomesList = () => {
   const [incomes, setIncomes] = useState([]);
@@ -97,6 +98,7 @@ const IncomesList = () => {
 
   return (
     <div>
+      <BackButton />
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Gelirler</h2>
         <Button 
