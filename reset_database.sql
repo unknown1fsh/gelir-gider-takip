@@ -28,9 +28,11 @@ CREATE TABLE users (
 -- Banks tablosu
 CREATE TABLE banks (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  bank_name VARCHAR(100) NOT NULL,
-  bank_code VARCHAR(10),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  bank_name VARCHAR(100) NOT NULL UNIQUE,
+  bank_code VARCHAR(10) UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_bank_name (bank_name),
+  INDEX idx_bank_code (bank_code)
 );
 
 -- Accounts tablosu

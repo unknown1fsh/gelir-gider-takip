@@ -3,6 +3,7 @@ import { Card, Row, Col, Button, Spinner, Alert, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import BackButton from './BackButton';
+import './Dashboard.css';
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -222,29 +223,34 @@ const Dashboard = () => {
             size="lg"
             onClick={fetchDashboardData}
             disabled={loading}
+            className="me-3"
           >
             {loading ? 'Yenileniyor...' : '🔄 Verileri Yenile'}
           </Button>
+
         </div>
+        
+
       </div>
     );
   }
 
+  // Dashboard verilerini güvenli bir şekilde al
   const {
-    totalAccounts,
-    totalCreditCards,
-    totalBalance,
-    totalCreditLimit,
-    availableCreditLimit,
-    totalIncome,
-    totalExpense,
-    netIncome,
-    foodCardIncome,
-    recentIncomes,
-    recentExpenses,
-    recentAccounts,
-    recentCreditCards
-  } = dashboardData;
+    totalAccounts = 0,
+    totalCreditCards = 0,
+    totalBalance = 0,
+    totalCreditLimit = 0,
+    availableCreditLimit = 0,
+    totalIncome = 0,
+    totalExpense = 0,
+    netIncome = 0,
+    foodCardIncome = 0,
+    recentIncomes = [],
+    recentExpenses = [],
+    recentAccounts = [],
+    recentCreditCards = []
+  } = dashboardData || {};
 
   return (
     <div className="container mt-4">
@@ -305,6 +311,8 @@ const Dashboard = () => {
                   </Button>
                 </Col>
               </Row>
+              
+
             </Card.Body>
           </Card>
         </Col>
@@ -430,15 +438,15 @@ const Dashboard = () => {
                   {recentIncomes.map((income) => (
                     <div key={income.id} className="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
                       <div>
-                        <div className="fw-bold">{income.title}</div>
+                        <div className="fw-bold">{income.title || 'Başlıksız Gelir'}</div>
                         <small className="text-muted">
-                          {getIncomeTypeLabel(income.income_type)} • {income.source}
+                          {getIncomeTypeLabel(income.income_type || 'other')} • {income.source || 'Bilinmiyor'}
                         </small>
                       </div>
                       <div className="text-end">
-                        <div className="fw-bold text-success">{formatCurrency(income.amount)}</div>
+                        <div className="fw-bold text-success">{formatCurrency(income.amount || 0)}</div>
                         <small className="text-muted">
-                          {new Date(income.income_date).toLocaleDateString('tr-TR')}
+                          {income.income_date ? new Date(income.income_date).toLocaleDateString('tr-TR') : 'Tarih Yok'}
                         </small>
                       </div>
                     </div>
@@ -481,24 +489,24 @@ const Dashboard = () => {
                   {recentExpenses.map((expense) => (
                     <div key={expense.id} className="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
                       <div>
-                        <div className="fw-bold">{expense.title}</div>
+                        <div className="fw-bold">{expense.title || 'Başlıksız Gider'}</div>
                         <small className="text-muted">
-                          {expense.category_name} • {getPaymentMethodLabel(expense.payment_method)}
+                          {expense.category_name || 'Kategori Yok'} • {getPaymentMethodLabel(expense.payment_method || 'cash')}
                         </small>
-                        {expense.category_name && (
+                        {(expense.category_name || expense.category_color) && (
                           <Badge 
                             bg="secondary" 
                             className="ms-2"
                             style={{ backgroundColor: expense.category_color || '#6c757d' }}
                           >
-                            {expense.category_name}
+                            {expense.category_name || 'Kategori'}
                           </Badge>
                         )}
                       </div>
                       <div className="text-end">
-                        <div className="fw-bold text-danger">{formatCurrency(expense.amount)}</div>
+                        <div className="fw-bold text-danger">{formatCurrency(expense.amount || 0)}</div>
                         <small className="text-muted">
-                          {new Date(expense.created_at).toLocaleDateString('tr-TR')}
+                          {expense.created_at ? new Date(expense.created_at).toLocaleDateString('tr-TR') : 'Tarih Yok'}
                         </small>
                       </div>
                     </div>
@@ -545,14 +553,14 @@ const Dashboard = () => {
                   {recentAccounts.map((account) => (
                     <div key={account.id} className="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
                       <div>
-                        <div className="fw-bold">{account.account_name}</div>
-                        <small className="text-muted">{account.bank_name}</small>
+                        <div className="fw-bold">{account.account_name || 'İsimsiz Hesap'}</div>
+                        <small className="text-muted">{account.bank_name || 'Banka Yok'}</small>
                       </div>
                       <div className="text-end">
-                        <div className="fw-bold text-info">{formatCurrency(account.current_balance)}</div>
-                                                 <small className="text-muted">
-                           {new Date(account.created_at).toLocaleDateString('tr-TR')}
-                         </small>
+                                                <div className="fw-bold text-info">{formatCurrency(account.current_balance || 0)}</div>
+                        <small className="text-muted">
+                          {account.created_at ? new Date(account.created_at).toLocaleDateString('tr-TR') : 'Tarih Yok'}
+                        </small>
                       </div>
                     </div>
                   ))}
@@ -594,14 +602,14 @@ const Dashboard = () => {
                   {recentCreditCards.map((card) => (
                     <div key={card.id} className="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
                       <div>
-                        <div className="fw-bold">{card.card_name}</div>
-                        <small className="text-muted">{card.bank_name}</small>
+                        <div className="fw-bold">{card.card_name || 'İsimsiz Kart'}</div>
+                        <small className="text-muted">{card.bank_name || 'Banka Yok'}</small>
                       </div>
                       <div className="text-end">
-                        <div className="fw-bold text-warning">{formatCurrency(card.remaining_limit)}</div>
-                                                 <small className="text-muted">
-                           {new Date(card.created_at).toLocaleDateString('tr-TR')}
-                         </small>
+                                                <div className="fw-bold text-warning">{formatCurrency(card.remaining_limit || 0)}</div>
+                        <small className="text-muted">
+                          {card.created_at ? new Date(card.created_at).toLocaleDateString('tr-TR') : 'Tarih Yok'}
+                        </small>
                       </div>
                     </div>
                   ))}

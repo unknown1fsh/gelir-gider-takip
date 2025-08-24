@@ -27,7 +27,8 @@ const ExpenseForm = () => {
         property_address: '',
         landlord_name: '',
         contract_start_date: '',
-        contract_end_date: ''
+        contract_end_date: '',
+        due_date: ''
     });
 
     const [creditData, setCreditData] = useState({
@@ -163,6 +164,17 @@ const ExpenseForm = () => {
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
+        
+        // Gider türü değiştiğinde otomatik kategori seçimi
+        if (name === 'expense_type') {
+            const selectedExpenseType = expenseTypes.find(type => type.value === value);
+            if (selectedExpenseType && selectedExpenseType.category) {
+                const category = categories.find(cat => cat.name === selectedExpenseType.category);
+                if (category) {
+                    setFormData(prev => ({ ...prev, category_id: category.id }));
+                }
+            }
+        }
     };
 
     const handleRentChange = (e) => {
@@ -254,7 +266,8 @@ const ExpenseForm = () => {
             property_address: '',
             landlord_name: '',
             contract_start_date: '',
-            contract_end_date: ''
+            contract_end_date: '',
+            due_date: ''
         });
         setCreditData({
             payment_type: 'credit_card',
@@ -270,16 +283,17 @@ const ExpenseForm = () => {
     };
 
     const expenseTypes = [
-        { value: 'rent', label: 'Ev Kirası' },
-        { value: 'utilities', label: 'Faturalar' },
-        { value: 'credit', label: 'Kredi Ödemesi' },
-        { value: 'credit_card', label: 'Kredi Kartı' },
-        { value: 'credit_account', label: 'Kredili Hesap' },
-        { value: 'food', label: 'Market' },
-        { value: 'transport', label: 'Ulaşım' },
-        { value: 'health', label: 'Sağlık' },
-        { value: 'entertainment', label: 'Eğlence' },
-        { value: 'other', label: 'Diğer' }
+        { value: 'rent', label: '🏠 Ev Kirası', category: 'Ev Giderleri' },
+        { value: 'utilities', label: '💡 Faturalar (Elektrik, Su, Doğalgaz)', category: 'Ev Giderleri' },
+        { value: 'maintenance', label: '🔧 Ev Bakım/Onarım', category: 'Ev Giderleri' },
+        { value: 'credit_card', label: '💳 Kredi Kartı Ödemesi', category: 'Kredi Ödemeleri' },
+        { value: 'credit_loan', label: '🏦 Kredi Ödemesi', category: 'Kredi Ödemeleri' },
+        { value: 'credit_account', label: '📊 Kredili Hesap', category: 'Kredi Ödemeleri' },
+        { value: 'food', label: '🛒 Market/Alışveriş', category: 'Gıda' },
+        { value: 'transport', label: '🚗 Ulaşım', category: 'Ulaşım' },
+        { value: 'health', label: '🏥 Sağlık', category: 'Sağlık' },
+        { value: 'entertainment', label: '🎬 Eğlence', category: 'Eğlence' },
+        { value: 'other', label: '📝 Diğer', category: 'Diğer' }
     ];
 
     const paymentMethods = [
@@ -572,6 +586,68 @@ const ExpenseForm = () => {
                                             <div className="mt-4 pt-2">
                                                 <strong>Toplam: ₺{calculateTotalAmount().toFixed(2)}</strong>
                                             </div>
+                                        </Col>
+                                    </Row>
+                                    <Row>
+                                        <Col md={4}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>Son Ödeme Tarihi</Form.Label>
+                                                <Form.Control
+                                                    type="date"
+                                                    name="due_date"
+                                                    value={rentData.due_date}
+                                                    onChange={handleRentChange}
+                                                    required
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={4}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>Mülk Adresi</Form.Label>
+                                                <Form.Control
+                                                    type="text"
+                                                    name="property_address"
+                                                    value={rentData.property_address}
+                                                    onChange={handleRentChange}
+                                                    placeholder="Mülk adresi..."
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={4}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>Ev Sahibi</Form.Label>
+                                                <Form.Control
+                                                    type="text"
+                                                    name="landlord_name"
+                                                    value={rentData.landlord_name}
+                                                    onChange={handleRentChange}
+                                                    placeholder="Ev sahibi adı..."
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
+                                    <Row>
+                                        <Col md={6}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>Kontrat Başlangıç</Form.Label>
+                                                <Form.Control
+                                                    type="date"
+                                                    name="contract_start_date"
+                                                    value={rentData.contract_start_date}
+                                                    onChange={handleRentChange}
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group className="mb-3">
+                                                <Form.Label>Kontrat Bitiş</Form.Label>
+                                                <Form.Control
+                                                    type="date"
+                                                    name="contract_end_date"
+                                                    value={rentData.contract_end_date}
+                                                    onChange={handleRentChange}
+                                                />
+                                            </Form.Group>
                                         </Col>
                                     </Row>
                                 </Card.Body>

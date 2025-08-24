@@ -20,6 +20,15 @@ const IncomesList = () => {
   const fetchIncomes = async () => {
     try {
       setLoading(true);
+      setError('');
+      
+      // Token kontrolü
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+
       const response = await axios.get('/api/incomes');
       if (response.data.success) {
         setIncomes(response.data.incomes);
@@ -28,7 +37,19 @@ const IncomesList = () => {
       }
     } catch (error) {
       console.error('Gelir listesi hatası:', error);
-      setError('Gelirler yüklenirken hata oluştu');
+      
+      if (error.response?.status === 403) {
+        setError('Yetki hatası. Lütfen tekrar giriş yapın.');
+        // Token'ı temizle ve login sayfasına yönlendir
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else if (error.response?.status === 401) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else {
+        setError('Gelirler yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message));
+      }
     } finally {
       setLoading(false);
     }
@@ -38,16 +59,36 @@ const IncomesList = () => {
     if (!selectedIncome) return;
 
     try {
-      // Burada silme API'si olacak
-      // await axios.delete(`/api/incomes/${selectedIncome.id}`);
+      // Token kontrolü
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        navigate('/login');
+        return;
+      }
+
+      await axios.delete(`/api/incomes/${selectedIncome.id}`);
       
-      // Şimdilik sadece state'den kaldır
+      // State'den kaldır
       setIncomes(incomes.filter(income => income.id !== selectedIncome.id));
       setShowDeleteModal(false);
       setSelectedIncome(null);
     } catch (error) {
       console.error('Gelir silme hatası:', error);
-      setError('Gelir silinirken hata oluştu');
+      
+      if (error.response?.status === 403) {
+        setError('Yetki hatası. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else if (error.response?.status === 401) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else if (error.response?.status === 404) {
+        setError('Gelir bulunamadı');
+      } else {
+        setError('Gelir silinirken hata oluştu: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
@@ -181,6 +222,7 @@ const IncomesList = () => {
                           variant="outline-info" 
                           size="sm"
                           title="Görüntüle"
+                          onClick={() => navigate(`/incomes/${income.id}`)}
                         >
                           <FaEye />
                         </Button>
@@ -188,6 +230,7 @@ const IncomesList = () => {
                           variant="outline-warning" 
                           size="sm"
                           title="Düzenle"
+                          onClick={() => navigate(`/incomes/${income.id}/edit`)}
                         >
                           <FaEdit />
                         </Button>

@@ -12,10 +12,13 @@ import CreditCardForm from './components/CreditCardForm';
 import AccountsList from './components/AccountsList';
 import CreditCardsList from './components/CreditCardsList';
 import IncomeForm from './components/IncomeForm';
+import IncomeDetail from './components/IncomeDetail';
+import IncomeEditForm from './components/IncomeEditForm';
 import IncomesList from './components/IncomesList';
 import ExpenseForm from './components/ExpenseForm';
 import ExpensesList from './components/ExpensesList';
 import Analytics from './components/Analytics';
+import UserProfile from './components/UserProfile';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -127,6 +130,26 @@ function App() {
                 </div>
               </ProtectedRoute>
             } />
+            <Route path="/incomes/:id" element={
+              <ProtectedRoute>
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
+                    <IncomeDetail />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            <Route path="/incomes/:id/edit" element={
+              <ProtectedRoute>
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
+                    <IncomeEditForm />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
             <Route path="/expenses" element={
               <ProtectedRoute>
                 <div className="app-layout">
@@ -153,6 +176,16 @@ function App() {
                   <SidebarNavigation />
                   <div className="main-content">
                     <Analytics />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
+                    <UserProfile />
                   </div>
                 </div>
               </ProtectedRoute>

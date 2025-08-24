@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Nav, Dropdown } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaWallet, FaCreditCard, FaHome, FaPlus, FaList, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaHome, FaPlus, FaList, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 const SidebarNavigation = () => {
   const location = useLocation();
@@ -172,6 +172,18 @@ const SidebarNavigation = () => {
             </Nav.Link>
           )}
         </div>
+
+        {/* Admin Panel Butonu */}
+        <div className="nav-section">
+          <Nav.Link 
+            as={Link} 
+            to="/admin" 
+            className="sidebar-nav-link admin-panel-link"
+          >
+            <FaCog className="nav-icon" />
+            <span className="admin-panel-text">🛡️ Admin Panel</span>
+          </Nav.Link>
+        </div>
       </Nav>
 
       {/* Alt Kısım - Kullanıcı Menüsü */}
@@ -209,7 +221,11 @@ const SidebarNavigation = () => {
             <Dropdown.Divider />
             
             {/* Profil ve Ayarlar */}
-            <Dropdown.Item className="dropdown-item">
+            <Dropdown.Item 
+              as={Link} 
+              to="/profile" 
+              className="dropdown-item"
+            >
               <FaUserEdit className="dropdown-icon" />
               Profil
             </Dropdown.Item>

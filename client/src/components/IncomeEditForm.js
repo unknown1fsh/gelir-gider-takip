@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Button, Card, Alert, Row, Col } from 'react-bootstrap';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BackButton from './BackButton';
 
-const IncomeForm = () => {
+const IncomeEditForm = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         title: '',
         amount: '',
@@ -14,7 +17,73 @@ const IncomeForm = () => {
     });
     
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(true);
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    useEffect(() => {
+        fetchIncome();
+    }, [id]);
+
+    const fetchIncome = async () => {
+        try {
+            setFetching(true);
+            setMessage({ type: '', text: '' });
+            
+            // Token kontrolü
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
+                });
+                navigate('/login');
+                return;
+            }
+
+            const response = await axios.get(`/api/incomes/${id}`);
+            if (response.data.success) {
+                const income = response.data.income;
+                setFormData({
+                    title: income.title,
+                    amount: income.amount,
+                    income_type: income.income_type,
+                    source: income.source,
+                    description: income.description || '',
+                    income_date: income.income_date
+                });
+            }
+        } catch (error) {
+            console.error('Gelir getirme hatası:', error);
+            
+            if (error.response?.status === 403) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Yetki hatası. Lütfen tekrar giriş yapın.' 
+                });
+                localStorage.removeItem('token');
+                navigate('/login');
+            } else if (error.response?.status === 401) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
+                });
+                localStorage.removeItem('token');
+                navigate('/login');
+            } else if (error.response?.status === 404) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Gelir bulunamadı' 
+                });
+            } else {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Gelir bilgileri yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message)
+                });
+            }
+        } finally {
+            setFetching(false);
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,24 +99,53 @@ const IncomeForm = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            const response = await axios.post('/api/incomes', formData);
+            // Token kontrolü
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
+                });
+                navigate('/login');
+                return;
+            }
+
+            const response = await axios.put(`/api/incomes/${id}`, formData);
             
             if (response.data.success) {
                 setMessage({ type: 'success', text: response.data.message });
-                setFormData({
-                    title: '',
-                    amount: '',
-                    income_type: 'salary',
-                    source: '',
-                    description: '',
-                    income_date: new Date().toISOString().split('T')[0]
-                });
+                setTimeout(() => {
+                    navigate('/incomes');
+                }, 1500);
             }
         } catch (error) {
-            setMessage({ 
-                type: 'danger', 
-                text: error.response?.data?.message || 'Gelir eklenirken hata oluştu' 
-            });
+            console.error('Gelir güncelleme hatası:', error);
+            
+            if (error.response?.status === 403) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Yetki hatası. Lütfen tekrar giriş yapın.' 
+                });
+                localStorage.removeItem('token');
+                navigate('/login');
+            } else if (error.response?.status === 401) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
+                });
+                localStorage.removeItem('token');
+                navigate('/login');
+            } else if (error.response?.status === 404) {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Gelir bulunamadı' 
+                });
+            } else {
+                setMessage({ 
+                    type: 'danger', 
+                    text: 'Gelir güncellenirken hata oluştu: ' + (error.response?.data?.message || error.message)
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -62,12 +160,22 @@ const IncomeForm = () => {
         { value: 'other', label: 'Diğer' }
     ];
 
+    if (fetching) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Yükleniyor...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="container mt-4">
             <BackButton />
             <Card className="shadow">
-                <Card.Header className="bg-primary text-white">
-                    <h4 className="mb-0">💰 Yeni Gelir Ekle</h4>
+                <Card.Header className="bg-warning text-dark">
+                    <h4 className="mb-0">✏️ Gelir Düzenle</h4>
                 </Card.Header>
                 <Card.Body>
                     {message.text && (
@@ -124,13 +232,24 @@ const IncomeForm = () => {
                                             </option>
                                         ))}
                                     </Form.Select>
-                                    {formData.income_type === 'food_card' && (
-                                        <Form.Text className="text-warning">
-                                            ⚠️ Yemek kartı geliri sadece yemek giderlerinde kullanılır ve genel gelir hesaplamalarına dahil edilmez.
-                                        </Form.Text>
-                                    )}
                                 </Form.Group>
                             </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Kaynak *</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="source"
+                                        value={formData.source}
+                                        onChange={handleChange}
+                                        placeholder="Örn: Şirket Adı"
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+
+                        <Row>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Gelir Tarihi *</Form.Label>
@@ -143,21 +262,6 @@ const IncomeForm = () => {
                                     />
                                 </Form.Group>
                             </Col>
-                        </Row>
-
-                        <Row>
-                            <Col md={6}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Gelir Kaynağı</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="source"
-                                        value={formData.source}
-                                        onChange={handleChange}
-                                        placeholder="Örn: ABC Şirketi"
-                                    />
-                                </Form.Group>
-                            </Col>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Açıklama</Form.Label>
@@ -166,22 +270,27 @@ const IncomeForm = () => {
                                         name="description"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        placeholder="Gelir hakkında ek bilgiler..."
-                                        rows="3"
+                                        placeholder="Gelir hakkında ek bilgi..."
+                                        rows="1"
                                     />
                                 </Form.Group>
                             </Col>
                         </Row>
 
-                        <div className="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <Button
-                                type="submit"
-                                variant="success"
-                                size="lg"
+                        <div className="d-flex gap-2 justify-content-end">
+                            <Button 
+                                variant="secondary" 
+                                onClick={() => navigate('/incomes')}
                                 disabled={loading}
-                                className="px-4"
                             >
-                                {loading ? 'Ekleniyor...' : '💰 Gelir Ekle'}
+                                İptal
+                            </Button>
+                            <Button 
+                                variant="warning" 
+                                type="submit"
+                                disabled={loading}
+                            >
+                                {loading ? 'Güncelleniyor...' : 'Güncelle'}
                             </Button>
                         </div>
                     </Form>
@@ -191,4 +300,4 @@ const IncomeForm = () => {
     );
 };
 
-export default IncomeForm;
+export default IncomeEditForm;

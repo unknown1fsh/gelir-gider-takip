@@ -759,3 +759,34 @@ code {
   font-size: 0.875rem;
 }
 
+/* Admin Panel Link Styles */
+.admin-panel-link {
+  background-color: #e74c3c !important;
+  border: 2px solid #c0392b !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin: 0.5rem 0.75rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease-in-out !important;
+}
+
+.admin-panel-link:hover {
+  background-color: #c0392b !important;
+  border-color: #a93226 !important;
+  color: white !important;
+  transform: translateX(5px) scale(1.02) !important;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4) !important;
+}
+
+.admin-panel-link .admin-panel-text {
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+}
+
+.admin-panel-link .nav-icon {
+  color: white !important;
+  font-size: 1.1rem !important;
+}
+

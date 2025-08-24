@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  // Axios interceptor - her istekte token ekle
+  // Axios interceptor - her istekte token ekle ve hataları yakala
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -25,6 +25,30 @@ export const AuthProvider = ({ children }) => {
       delete axios.defaults.headers.common['Authorization'];
       localStorage.removeItem('token');
     }
+
+    // Response interceptor - 401/403 hatalarında otomatik logout
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          console.log('Authentication error detected, logging out...');
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('token');
+          
+          // Eğer login sayfasında değilsek, login'e yönlendir
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup function
+    return () => {
+      axios.interceptors.response.eject(responseInterceptor);
+    };
   }, [token]);
 
   // Sayfa yüklendiğinde token kontrolü
@@ -39,11 +63,17 @@ export const AuthProvider = ({ children }) => {
             // Token geçersiz, temizle
             setToken(null);
             setUser(null);
+            localStorage.removeItem('token');
           }
         } catch (error) {
-          // Token geçersiz, temizle
-          setToken(null);
-          setUser(null);
+          console.error('Token kontrol hatası:', error);
+          
+          // 403 veya 401 hatası durumunda token'ı temizle
+          if (error.response?.status === 403 || error.response?.status === 401) {
+            setToken(null);
+            setUser(null);
+            localStorage.removeItem('token');
+          }
         }
       }
       setLoading(false);

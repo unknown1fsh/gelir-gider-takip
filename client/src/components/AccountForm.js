@@ -38,6 +38,8 @@ const AccountForm = () => {
     }
   };
 
+
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
@@ -237,6 +239,11 @@ const AccountForm = () => {
                       <Form.Control.Feedback type="invalid">
                         {errors.bank_id}
                       </Form.Control.Feedback>
+                      {banks.length > 0 && (
+                        <Form.Text className="text-muted">
+                          {banks.length} adet banka bulundu
+                        </Form.Text>
+                      )}
                     </Form.Group>
                   </Col>
                   
