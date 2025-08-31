@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Nav, Dropdown } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaHome, FaPlus, FaList, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaHome, FaPlus, FaList, FaChevronDown, FaChevronRight, FaCreditCard } from 'react-icons/fa';
 
 const SidebarNavigation = () => {
   const location = useLocation();
@@ -133,6 +133,14 @@ const SidebarNavigation = () => {
               >
                 <FaList className="nav-icon" />
                 <span>Gider Listesi</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/automatic-payments" 
+                className={`sidebar-nav-link ${isActive('/automatic-payments') ? 'active' : ''}`}
+              >
+                <FaCreditCard className="nav-icon" />
+                <span>Otomatik Ödemeler</span>
               </Nav.Link>
               <Nav.Link 
                 as={Link} 

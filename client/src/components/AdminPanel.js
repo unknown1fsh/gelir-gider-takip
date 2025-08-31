@@ -9,8 +9,8 @@ import {
   FaUsers, FaChartBar, FaDatabase, FaCog, 
   FaTrash, FaPlus, FaEye, FaEdit, FaBan,
   FaCheck, FaExclamationTriangle, FaServer,
-  FaHdd, FaNetworkWired, FaBars, FaTimes,
-  FaCode, FaShieldAlt, FaDownload, FaUndo,
+  FaHdd, FaBars, FaTimes,
+  FaCode, FaDownload,
   FaSearch, FaClock, FaUpload
 } from 'react-icons/fa';
 
@@ -27,7 +27,6 @@ const AdminPanel = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [users, setUsers] = useState([]);
   const [systemParams, setSystemParams] = useState(null);
-  const [banks, setBanks] = useState([]);
   const [newBankName, setNewBankName] = useState('');
   
   // Sistem parametreleri düzenleme state'leri
@@ -42,8 +41,6 @@ const AdminPanel = () => {
   const [systemParameters, setSystemParameters] = useState([]);
   const [filteredParameters, setFilteredParameters] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedEditable, setSelectedEditable] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingParameter, setEditingParameter] = useState(null);
   const [showParameterModal, setShowParameterModal] = useState(false);
@@ -150,8 +147,8 @@ const AdminPanel = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        setBanks(data || []);
+        // const data = await response.json();
+        // setBanks(data || []);
       }
     } catch (error) {
       console.error('Bankalar getirme hatası:', error);
@@ -241,32 +238,32 @@ const AdminPanel = () => {
   };
 
   // Tek banka sil
-  const deleteBank = async (bankId, bankName) => {
-    if (!window.confirm(`⚠️ "${bankName}" bankasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
-      return;
-    }
+  // const deleteBank = async (bankId, bankName) => {
+  //   if (!window.confirm(`⚠️ "${bankName}" bankasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
+  //     return;
+  //   }
 
-    try {
-      const response = await fetch(`/api/banks/${bankId}`, {
-        method: 'DELETE',
-        headers: { 
-          'Content-Type': 'application/json',
-          'admin-password': adminPassword
-        }
-      });
+  //   try {
+  //     const response = await fetch(`/api/banks/${bankId}`, {
+  //       method: 'DELETE',
+  //       headers: { 
+  //         'Content-Type': 'application/json',
+  //         'admin-password': adminPassword
+  //       }
+  //     });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessage({ type: 'success', text: data.message });
-        fetchBanks();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.error || 'Banka silme hatası' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setMessage({ type: 'success', text: data.message });
+  //       fetchBanks();
+  //     } else {
+  //       const errorData = await response.json();
+  //       setMessage({ type: 'danger', text: errorData.error || 'Banka silme hatası' });
+  //     }
+  //   } catch (error) {
+  //     setMessage({ type: 'danger', text: 'Bağlantı hatası' });
+  //   }
+  // };
 
   // Sistem parametrelerini getir
   const fetchSystemParams = async () => {
@@ -821,14 +818,14 @@ const AdminPanel = () => {
     }
     
     // Tip filtreleme
-    if (selectedType !== 'all') {
-      filtered = filtered.filter(param => param.param_type === selectedType);
-    }
+    // if (selectedType !== 'all') {
+    //   filtered = filtered.filter(param => param.param_type === selectedType);
+    // }
     
     // Düzenlenebilir filtreleme
-    if (selectedEditable !== 'all') {
-      filtered = filtered.filter(param => param.is_editable === (selectedEditable === 'true'));
-    }
+    // if (selectedEditable !== 'all') {
+    //   filtered = filtered.filter(param => param.is_editable === (selectedEditable === 'true'));
+    // }
     
     // Arama terimi filtreleme
     if (searchTerm) {
@@ -842,7 +839,7 @@ const AdminPanel = () => {
     }
     
     setFilteredParameters(filtered);
-  }, [systemParameters, selectedCategory, selectedType, selectedEditable, searchTerm]);
+  }, [systemParameters, selectedCategory, searchTerm]);
 
   // Click outside handler for mobile menu
   useEffect(() => {

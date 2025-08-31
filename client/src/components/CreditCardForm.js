@@ -91,7 +91,7 @@ const CreditCardForm = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.post('/api/credit-cards', formData);
+      await axios.post('/api/credit-cards', formData);
       setMessage({ type: 'success', text: 'Kredi kartı başarıyla eklendi!' });
       
       // Formu temizle

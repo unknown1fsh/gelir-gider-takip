@@ -49,7 +49,7 @@ const AccountsList = () => {
     e.preventDefault();
     
     try {
-      const response = await axios.put(`/api/accounts/${editingAccount.id}`, editFormData);
+      await axios.put(`/api/accounts/${editingAccount.id}`, editFormData);
       setMessage({ type: 'success', text: 'Hesap başarıyla güncellendi!' });
       
       // Hesapları yeniden yükle

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardBody, Form, Button, Row, Col, Alert, Badge } from 'react-bootstrap';
+import { Card, CardHeader, CardBody, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BackButton from './BackButton';
@@ -30,11 +30,20 @@ const AccountForm = () => {
 
   const fetchBanks = async () => {
     try {
+      console.log('🔍 Bankalar yükleniyor...');
       const response = await axios.get('/api/banks');
+      console.log('✅ Bankalar başarıyla yüklendi:', response.data);
       setBanks(response.data);
     } catch (error) {
-      console.error('Bankalar yüklenemedi:', error);
-      setMessage({ type: 'danger', text: 'Bankalar yüklenirken hata oluştu' });
+      console.error('❌ Bankalar yüklenemedi:', error);
+      console.error('❌ Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        url: error.config?.url
+      });
+      setMessage({ type: 'danger', text: `Bankalar yüklenirken hata oluştu: ${error.response?.data?.message || error.message}` });
     }
   };
 
@@ -130,7 +139,7 @@ const AccountForm = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.post('/api/accounts', formData);
+      await axios.post('/api/accounts', formData);
       setMessage({ type: 'success', text: 'Hesap başarıyla eklendi!' });
       
       // Formu temizle

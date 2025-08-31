@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Button, Card, Alert, Row, Col, Modal } from 'react-bootstrap';
+import { Form, Button, Card, Alert, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import BackButton from './BackButton';
 
@@ -48,8 +48,6 @@ const ExpenseForm = () => {
     const [categories, setCategories] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [creditCards, setCreditCards] = useState([]);
-    const [showRentModal, setShowRentModal] = useState(false);
-    const [showCreditModal, setShowCreditModal] = useState(false);
     
     // API çağrı kontrolü için ref
     const categoriesLoaded = useRef(false);

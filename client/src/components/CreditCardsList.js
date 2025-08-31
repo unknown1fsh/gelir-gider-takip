@@ -45,7 +45,7 @@ const CreditCardsList = () => {
     e.preventDefault();
     
     try {
-      const response = await axios.put(`/api/credit-cards/${editingCard.id}`, editFormData);
+      await axios.put(`/api/credit-cards/${editingCard.id}`, editFormData);
       setMessage({ type: 'success', text: 'Kredi kartı başarıyla güncellendi!' });
       
       // Kredi kartlarını yeniden yükle

@@ -19,6 +19,7 @@ import ExpenseForm from './components/ExpenseForm';
 import ExpensesList from './components/ExpensesList';
 import Analytics from './components/Analytics';
 import UserProfile from './components/UserProfile';
+import AutomaticPayments from './components/AutomaticPayments';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -186,6 +187,16 @@ function App() {
                   <SidebarNavigation />
                   <div className="main-content">
                     <UserProfile />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            <Route path="/automatic-payments" element={
+              <ProtectedRoute>
+                <div className="app-layout">
+                  <SidebarNavigation />
+                  <div className="main-content">
+                    <AutomaticPayments />
                   </div>
                 </div>
               </ProtectedRoute>

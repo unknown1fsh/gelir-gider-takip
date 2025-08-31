@@ -14,46 +14,48 @@ const IncomesList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchIncomes = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        // Token kontrolü
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          return;
+        }
+
+        const response = await axios.get('/api/incomes');
+        if (response.data.success) {
+          setIncomes(response.data.incomes);
+        } else {
+          setError('Gelirler yüklenirken hata oluştu');
+        }
+      } catch (error) {
+        console.error('Gelir listesi hatası:', error);
+        
+        if (error.response?.status === 403) {
+          setError('Yetki hatası. Lütfen tekrar giriş yapın.');
+          // Token'ı temizle ve login sayfasına yönlendir
+          localStorage.removeItem('token');
+          navigate('/login');
+        } else if (error.response?.status === 401) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          localStorage.removeItem('token');
+          navigate('/login');
+        } else {
+          setError('Gelirler yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchIncomes();
-  }, []);
+  }, [navigate]);
 
-  const fetchIncomes = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Token kontrolü
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-        return;
-      }
 
-      const response = await axios.get('/api/incomes');
-      if (response.data.success) {
-        setIncomes(response.data.incomes);
-      } else {
-        setError('Gelirler yüklenirken hata oluştu');
-      }
-    } catch (error) {
-      console.error('Gelir listesi hatası:', error);
-      
-      if (error.response?.status === 403) {
-        setError('Yetki hatası. Lütfen tekrar giriş yapın.');
-        // Token'ı temizle ve login sayfasına yönlendir
-        localStorage.removeItem('token');
-        navigate('/login');
-      } else if (error.response?.status === 401) {
-        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-        localStorage.removeItem('token');
-        navigate('/login');
-      } else {
-        setError('Gelirler yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message));
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!selectedIncome) return;

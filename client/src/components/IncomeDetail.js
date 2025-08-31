@@ -14,48 +14,50 @@ const IncomeDetail = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
+        const fetchIncome = async () => {
+            try {
+                setLoading(true);
+                setError('');
+                
+                // Token kontrolü
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+                    navigate('/login');
+                    return;
+                }
+
+                const response = await axios.get(`/api/incomes/${id}`);
+                if (response.data.success) {
+                    setIncome(response.data.income);
+                } else {
+                    setError('Gelir bulunamadı');
+                }
+            } catch (error) {
+                console.error('Gelir getirme hatası:', error);
+                
+                if (error.response?.status === 403) {
+                    setError('Yetki hatası. Lütfen tekrar giriş yapın.');
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                } else if (error.response?.status === 401) {
+                    setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                } else if (error.response?.status === 404) {
+                    setError('Gelir bulunamadı');
+                } else {
+                    setError('Gelir bilgileri yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message));
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        
         fetchIncome();
-    }, [id]);
+    }, [id, navigate]);
 
-    const fetchIncome = async () => {
-        try {
-            setLoading(true);
-            setError('');
-            
-            // Token kontrolü
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-                navigate('/login');
-                return;
-            }
 
-            const response = await axios.get(`/api/incomes/${id}`);
-            if (response.data.success) {
-                setIncome(response.data.income);
-            } else {
-                setError('Gelir bulunamadı');
-            }
-        } catch (error) {
-            console.error('Gelir getirme hatası:', error);
-            
-            if (error.response?.status === 403) {
-                setError('Yetki hatası. Lütfen tekrar giriş yapın.');
-                localStorage.removeItem('token');
-                navigate('/login');
-            } else if (error.response?.status === 401) {
-                setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-                localStorage.removeItem('token');
-                navigate('/login');
-            } else if (error.response?.status === 404) {
-                setError('Gelir bulunamadı');
-            } else {
-                setError('Gelir bilgileri yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message));
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDelete = async () => {
         try {

@@ -21,69 +21,71 @@ const IncomeEditForm = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
+        const fetchIncome = async () => {
+            try {
+                setFetching(true);
+                setMessage({ type: '', text: '' });
+                
+                // Token kontrolü
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setMessage({ 
+                        type: 'danger', 
+                        text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
+                    });
+                    navigate('/login');
+                    return;
+                }
+
+                const response = await axios.get(`/api/incomes/${id}`);
+                if (response.data.success) {
+                    const income = response.data.income;
+                    setFormData({
+                        title: income.title,
+                        amount: income.amount,
+                        income_type: income.income_type,
+                        source: income.source,
+                        description: income.description || '',
+                        income_date: income.income_date
+                    });
+                }
+            } catch (error) {
+                console.error('Gelir getirme hatası:', error);
+                
+                if (error.response?.status === 403) {
+                    setMessage({ 
+                        type: 'danger', 
+                        text: 'Yetki hatası. Lütfen tekrar giriş yapın.' 
+                    });
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                } else if (error.response?.status === 401) {
+                    setMessage({ 
+                        type: 'danger', 
+                        text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
+                    });
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                } else if (error.response?.status === 404) {
+                    setMessage({ 
+                        type: 'danger', 
+                        text: 'Gelir bulunamadı' 
+                    });
+                } else {
+                    setMessage({ 
+                        type: 'danger', 
+                        text: 'Gelir bilgileri yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message)
+                    });
+                }
+            } finally {
+                setFetching(false);
+            }
+        };
+        
         fetchIncome();
-    }, [id]);
+    }, [id, navigate]);
 
-    const fetchIncome = async () => {
-        try {
-            setFetching(true);
-            setMessage({ type: '', text: '' });
-            
-            // Token kontrolü
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setMessage({ 
-                    type: 'danger', 
-                    text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
-                });
-                navigate('/login');
-                return;
-            }
 
-            const response = await axios.get(`/api/incomes/${id}`);
-            if (response.data.success) {
-                const income = response.data.income;
-                setFormData({
-                    title: income.title,
-                    amount: income.amount,
-                    income_type: income.income_type,
-                    source: income.source,
-                    description: income.description || '',
-                    income_date: income.income_date
-                });
-            }
-        } catch (error) {
-            console.error('Gelir getirme hatası:', error);
-            
-            if (error.response?.status === 403) {
-                setMessage({ 
-                    type: 'danger', 
-                    text: 'Yetki hatası. Lütfen tekrar giriş yapın.' 
-                });
-                localStorage.removeItem('token');
-                navigate('/login');
-            } else if (error.response?.status === 401) {
-                setMessage({ 
-                    type: 'danger', 
-                    text: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' 
-                });
-                localStorage.removeItem('token');
-                navigate('/login');
-            } else if (error.response?.status === 404) {
-                setMessage({ 
-                    type: 'danger', 
-                    text: 'Gelir bulunamadı' 
-                });
-            } else {
-                setMessage({ 
-                    type: 'danger', 
-                    text: 'Gelir bilgileri yüklenirken hata oluştu: ' + (error.response?.data?.message || error.message)
-                });
-            }
-        } finally {
-            setFetching(false);
-        }
-    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;

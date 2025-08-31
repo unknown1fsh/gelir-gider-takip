@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Container, Row, Col, Card, Form, Button, 
-  Alert, Badge, Image, Tabs, Tab,
-  Modal, ProgressBar, Spinner
+  Alert, Image, Tabs, Tab,
+  Modal, Spinner
 } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -160,7 +160,7 @@ const UserProfile = () => {
 
       if (response.data.success) {
         setMessage({ type: 'success', text: 'Şifre başarıyla güncellendi!' });
-        setShowPasswordModal(false);
+        // setShowPasswordModal(false);
         setSecurityData(prev => ({
           ...prev,
           current_password: '',
