@@ -192,12 +192,18 @@ const ExpenseForm = () => {
     };
 
     const calculateTotalAmount = () => {
-        const rent = parseFloat(rentData.rent_amount) || 0;
-        const maintenance = parseFloat(rentData.maintenance_fee) || 0;
-        const tax = parseFloat(rentData.property_tax) || 0;
-        const insurance = parseFloat(rentData.insurance) || 0;
-        const other = parseFloat(rentData.other_fees) || 0;
-        return rent + maintenance + tax + insurance + other;
+        // Daha güvenli sayı dönüşümü için parseFloat yerine Number kullan
+        const rent = Number(rentData.rent_amount) || 0;
+        const maintenance = Number(rentData.maintenance_fee) || 0;
+        const tax = Number(rentData.property_tax) || 0;
+        const insurance = Number(rentData.insurance) || 0;
+        const other = Number(rentData.other_fees) || 0;
+        
+        // Toplamı hesapla ve precision hatasını düzelt
+        const total = rent + maintenance + tax + insurance + other;
+        
+        // Floating point precision hatasını düzelt
+        return Math.round(total * 100) / 100;
     };
 
     const handleSubmit = async (e) => {
@@ -214,10 +220,24 @@ const ExpenseForm = () => {
                 
                 // Ev kirası detayları ekleniyorsa
                 if (formData.expense_type === 'rent' && rentData.rent_amount) {
-                    await axios.post('/api/rent-expenses', {
-                        ...rentData,
-                        expense_id: expenseId
-                    });
+                    // Sadece dolu olan alanları gönder
+                    const rentDataToSend = {
+                        expense_id: expenseId,
+                        rent_amount: rentData.rent_amount || null,
+                        maintenance_fee: rentData.maintenance_fee || null,
+                        property_tax: rentData.property_tax || null,
+                        insurance: rentData.insurance || null,
+                        other_fees: rentData.other_fees || null,
+                        property_address: rentData.property_address || null,
+                        landlord_name: rentData.landlord_name || null,
+                        contract_start_date: rentData.contract_start_date || null,
+                        contract_end_date: rentData.contract_end_date || null,
+                        due_date: rentData.due_date || null
+                    };
+                    
+                    console.log('🏠 Rent data gönderiliyor:', rentDataToSend);
+                    
+                    await axios.post('/api/rent-expenses', rentDataToSend);
                 }
                 
                 // Kredi ödemesi detayları ekleniyorsa
@@ -524,7 +544,7 @@ const ExpenseForm = () => {
                                         </Col>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Aidat (₺)</Form.Label>
+                                                <Form.Label>Aidat (₺) - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="number"
                                                     name="maintenance_fee"
@@ -538,7 +558,7 @@ const ExpenseForm = () => {
                                         </Col>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Emlak Vergisi (₺)</Form.Label>
+                                                <Form.Label>Emlak Vergisi (₺) - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="number"
                                                     name="property_tax"
@@ -554,7 +574,7 @@ const ExpenseForm = () => {
                                     <Row>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Sigorta (₺)</Form.Label>
+                                                <Form.Label>Sigorta (₺) - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="number"
                                                     name="insurance"
@@ -568,7 +588,7 @@ const ExpenseForm = () => {
                                         </Col>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Diğer Masraflar (₺)</Form.Label>
+                                                <Form.Label>Diğer Masraflar (₺) - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="number"
                                                     name="other_fees"
@@ -589,19 +609,18 @@ const ExpenseForm = () => {
                                     <Row>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Son Ödeme Tarihi</Form.Label>
+                                                <Form.Label>Son Ödeme Tarihi - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="date"
                                                     name="due_date"
                                                     value={rentData.due_date}
                                                     onChange={handleRentChange}
-                                                    required
                                                 />
                                             </Form.Group>
                                         </Col>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Mülk Adresi</Form.Label>
+                                                <Form.Label>Mülk Adresi - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="text"
                                                     name="property_address"
@@ -613,7 +632,7 @@ const ExpenseForm = () => {
                                         </Col>
                                         <Col md={4}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Ev Sahibi</Form.Label>
+                                                <Form.Label>Ev Sahibi - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="text"
                                                     name="landlord_name"
@@ -627,7 +646,7 @@ const ExpenseForm = () => {
                                     <Row>
                                         <Col md={6}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Kontrat Başlangıç</Form.Label>
+                                                <Form.Label>Kontrat Başlangıç - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="date"
                                                     name="contract_start_date"
@@ -638,7 +657,7 @@ const ExpenseForm = () => {
                                         </Col>
                                         <Col md={6}>
                                             <Form.Group className="mb-3">
-                                                <Form.Label>Kontrat Bitiş</Form.Label>
+                                                <Form.Label>Kontrat Bitiş - Opsiyonel</Form.Label>
                                                 <Form.Control
                                                     type="date"
                                                     name="contract_end_date"

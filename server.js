@@ -839,7 +839,8 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
       due_date, payment_date, description
     } = req.body;
     
-    // Boş string değerleri NULL olarak değiştir
+    // Boş string değerleri NULL olarak değiştir ve precision hatasını düzelt
+    const cleanAmount = Math.round(Number(amount) * 100) / 100;
     const cleanRelatedAccountId = related_account_id === '' ? null : parseInt(related_account_id);
     const cleanRelatedCreditCardId = related_credit_card_id === '' ? null : parseInt(related_credit_card_id);
     const cleanRelatedCreditAccountId = related_credit_account_id === '' ? null : parseInt(related_credit_account_id);
@@ -860,7 +861,7 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     
     const result = await query(insertQuery, [
-      userId, title, amount, category_id, expense_type, payment_method,
+      userId, title, cleanAmount, category_id, expense_type, payment_method,
       cleanRelatedAccountId, cleanRelatedCreditCardId, cleanRelatedCreditAccountId,
       cleanDueDate, cleanPaymentDate, description, is_paid
     ]);
@@ -872,23 +873,23 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
       // Mevduat hesabından tutar düş
       await query(
         'UPDATE accounts SET current_balance = current_balance - $1 WHERE id = $2',
-        [amount, cleanRelatedAccountId]
+        [cleanAmount, cleanRelatedAccountId]
       );
-      console.log(`💰 ${amount}₺ tutarı hesap ID:${cleanRelatedAccountId}'den düşüldü`);
+      console.log(`💰 ${cleanAmount}₺ tutarı hesap ID:${cleanRelatedAccountId}'den düşüldü`);
     } else if (cleanRelatedCreditCardId && payment_method === 'credit_card') {
       // Kredi kartından tutar düş
       await query(
         'UPDATE credit_cards SET remaining_limit = remaining_limit - $1 WHERE id = $2',
-        [amount, cleanRelatedCreditCardId]
+        [cleanAmount, cleanRelatedCreditCardId]
       );
-      console.log(`💳 ${amount}₺ tutarı kredi kartı ID:${cleanRelatedCreditCardId}'den düşüldü`);
+      console.log(`💳 ${cleanAmount}₺ tutarı kredi kartı ID:${cleanRelatedCreditCardId}'den düşüldü`);
     } else if (cleanRelatedCreditAccountId && payment_method === 'credit_account') {
       // Kredili hesaptan tutar düş
       await query(
         'UPDATE accounts SET credit_limit = credit_limit - $1 WHERE id = $2',
-        [amount, cleanRelatedCreditAccountId]
+        [cleanAmount, cleanRelatedCreditAccountId]
       );
-      console.log(`🏦 ${amount}₺ tutarı kredili hesap ID:${cleanRelatedCreditAccountId}'den düşüldü`);
+      console.log(`🏦 ${cleanAmount}₺ tutarı kredili hesap ID:${cleanRelatedCreditAccountId}'den düşüldü`);
     }
     
     res.status(201).json({
@@ -899,6 +900,98 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Gider ekleme hatası:', error);
     res.status(500).json({ success: false, message: 'Gider eklenirken hata oluştu' });
+  }
+});
+
+// Ev kirası detaylarını ekle
+app.post('/api/rent-expenses', authenticateToken, async (req, res) => {
+  try {
+    const {
+      expense_id, rent_amount, maintenance_fee, property_tax, insurance,
+      other_fees, property_address, landlord_name, contract_start_date,
+      contract_end_date, due_date
+    } = req.body;
+    
+    console.log('🏠 Rent expenses verisi alındı:', req.body);
+    
+    // Rent expenses tablosunu oluştur (eğer yoksa)
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS rent_expenses (
+        id SERIAL PRIMARY KEY,
+        expense_id INTEGER REFERENCES expenses(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        rent_amount DECIMAL(10,2),
+        maintenance_fee DECIMAL(10,2),
+        property_tax DECIMAL(10,2),
+        insurance DECIMAL(10,2),
+        other_fees DECIMAL(10,2),
+        property_address TEXT,
+        landlord_name TEXT,
+        contract_start_date DATE,
+        contract_end_date DATE,
+        due_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    
+    await query(createTableQuery);
+    console.log('✅ Rent expenses tablosu oluşturuldu/kontrol edildi');
+    
+    // Boş string değerleri NULL olarak temizle ve precision hatasını düzelt
+    const cleanRentAmount = rent_amount === '' ? null : Math.round(Number(rent_amount) * 100) / 100;
+    const cleanMaintenanceFee = maintenance_fee === '' ? null : Math.round(Number(maintenance_fee) * 100) / 100;
+    const cleanPropertyTax = property_tax === '' ? null : Math.round(Number(property_tax) * 100) / 100;
+    const cleanInsurance = insurance === '' ? null : Math.round(Number(insurance) * 100) / 100;
+    const cleanOtherFees = other_fees === '' ? null : Math.round(Number(other_fees) * 100) / 100;
+    const cleanPropertyAddress = property_address === '' ? null : property_address;
+    const cleanLandlordName = landlord_name === '' ? null : landlord_name;
+    const cleanContractStartDate = contract_start_date === '' ? null : contract_start_date;
+    const cleanContractEndDate = contract_end_date === '' ? null : contract_end_date;
+    const cleanDueDate = due_date === '' ? null : due_date;
+    
+    const insertQuery = `
+      INSERT INTO rent_expenses (
+        expense_id, user_id, rent_amount, maintenance_fee, property_tax,
+        insurance, other_fees, property_address, landlord_name,
+        contract_start_date, contract_end_date, due_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING id
+    `;
+    
+    const userId = req.user.user_id;
+    
+    console.log('📝 Rent expenses insert parametreleri:', [
+      expense_id, userId, cleanRentAmount, cleanMaintenanceFee, cleanPropertyTax,
+      cleanInsurance, cleanOtherFees, cleanPropertyAddress, cleanLandlordName,
+      cleanContractStartDate, cleanContractEndDate, cleanDueDate
+    ]);
+    
+    const result = await query(insertQuery, [
+      expense_id, userId, cleanRentAmount, cleanMaintenanceFee, cleanPropertyTax,
+      cleanInsurance, cleanOtherFees, cleanPropertyAddress, cleanLandlordName,
+      cleanContractStartDate, cleanContractEndDate, cleanDueDate
+    ]);
+    
+    console.log('✅ Rent expenses başarıyla eklendi:', result.rows[0].id);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Ev kirası detayları başarıyla eklendi',
+      rent_expense_id: result.rows[0].id
+    });
+  } catch (error) {
+    console.error('❌ Ev kirası detayları ekleme hatası:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Ev kirası detayları eklenirken hata oluştu',
+      error: error.message 
+    });
   }
 });
 

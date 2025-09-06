@@ -1,682 +1,839 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, ProgressBar, Alert, Spinner, Button } from 'react-bootstrap';
+import { 
+  Card, Row, Col, Badge, ProgressBar, Alert, Spinner, Button, 
+  Table, Form, InputGroup, Tab, Tabs, Modal, ListGroup 
+} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { FaCheckCircle, FaExclamationTriangle, FaLightbulb, FaRobot } from 'react-icons/fa';
+import { 
+  FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaTrash, 
+  FaChartLine, FaChartPie, FaCalendarAlt, FaMoneyBillWave,
+  FaCreditCard, FaUniversity, FaArrowUp, FaArrowDown
+} from 'react-icons/fa';
 import BackButton from './BackButton';
+import './Dashboard.css';
 
 const Analytics = () => {
-    const [analytics, setAnalytics] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [aiAnalysis, setAiAnalysis] = useState(null);
-    const [generatingAnalysis, setGeneratingAnalysis] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Filtreleme ve arama
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  
+  // Detaylı veriler
+  const [incomes, setIncomes] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [creditCards, setCreditCards] = useState([]);
+  
+  // Modal durumları
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
-    useEffect(() => {
-        fetchAnalytics();
-    }, []);
+  useEffect(() => {
+    fetchAllData();
+  }, []);
 
-    const fetchAnalytics = async () => {
-        try {
-            setLoading(true);
-            const response = await axios.get('/api/analytics');
-            if (response.data.success) {
-                setAnalytics(response.data.analytics);
-            }
-        } catch (error) {
-            setError('Analiz verileri yüklenirken hata oluştu');
-            console.error('Analiz hatası:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      
+      // Paralel olarak tüm verileri çek
+      const [
+        analyticsResponse,
+        incomesResponse,
+        expensesResponse,
+        accountsResponse,
+        creditCardsResponse
+      ] = await Promise.all([
+        axios.get('/api/analytics'),
+        axios.get('/api/incomes'),
+        axios.get('/api/expenses'),
+        axios.get('/api/accounts'),
+        axios.get('/api/credit-cards')
+      ]);
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('tr-TR', {
-            style: 'currency',
-            currency: 'TRY'
-        }).format(amount || 0);
-    };
-
-    const formatPercentage = (value, total) => {
-        if (!total || total === 0) return '0%';
-        return `${((value / total) * 100).toFixed(1)}%`;
-    };
-
-    const getCategoryColor = (color) => {
-        return color || '#007bff';
-    };
-
-    // AI Destekli Analiz Notu Oluştur
-    const generateAIAnalysis = async () => {
-        if (!analytics) return;
-        
-        setGeneratingAnalysis(true);
-        
-        try {
-            // Finansal duruma göre AI analizi oluştur
-            const analysis = createFinancialAnalysis();
-            setAiAnalysis(analysis);
-        } catch (error) {
-            console.error('AI analiz hatası:', error);
-        } finally {
-            setGeneratingAnalysis(false);
-        }
-    };
-
-    // Finansal duruma göre analiz oluştur
-    const createFinancialAnalysis = () => {
-        const { totalIncome, totalExpense, netIncome, categoryExpenses, availableLimits } = analytics;
-        
-        let analysis = {
-            summary: '',
-            recommendations: [],
-            warnings: [],
-            positivePoints: [],
-            category: ''
-        };
-
-        // Net gelir durumuna göre kategori belirle
-        if (netIncome > 0) {
-            if (netIncome > totalIncome * 0.3) {
-                analysis.category = 'excellent';
-                analysis.summary = 'Mükemmel! Finansal durumunuz çok iyi.';
-            } else {
-                analysis.category = 'good';
-                analysis.summary = 'İyi! Finansal durumunuz dengeli.';
-            }
-        } else if (netIncome === 0) {
-            analysis.category = 'balanced';
-            analysis.summary = 'Dengeli! Gelir ve giderleriniz eşit.';
-        } else {
-            if (Math.abs(netIncome) > totalIncome * 0.3) {
-                analysis.category = 'critical';
-                analysis.summary = 'Dikkat! Finansal durumunuz kritik.';
-            } else {
-                analysis.category = 'warning';
-                analysis.summary = 'Uyarı! Gelirleriniz giderlerinizden az.';
-            }
-        }
-
-        // Gelir-gider oranı analizi
-        const expenseRatio = totalExpense / totalIncome;
-        if (expenseRatio > 0.9) {
-            analysis.warnings.push('Giderleriniz gelirlerinizin %90\'ından fazla. Tasarruf yapmanız gerekiyor.');
-        } else if (expenseRatio < 0.6) {
-            analysis.positivePoints.push('Mükemmel tasarruf oranı! Gelirlerinizin %40\'ından fazlasını tasarruf ediyorsunuz.');
-        }
-
-        // Kategori bazında öneriler
-        if (categoryExpenses && categoryExpenses.length > 0) {
-            const topExpense = categoryExpenses[0];
-            const topExpenseRatio = (topExpense.total / totalExpense) * 100;
-            
-            if (topExpenseRatio > 40) {
-                analysis.warnings.push(`${topExpense.name} kategorisinde çok yüksek harcama (${topExpenseRatio.toFixed(1)}%). Bu alanda tasarruf yapmayı düşünün.`);
-            }
-        }
-
-        // Limit kullanım analizi
-        if (availableLimits && availableLimits.length > 0) {
-            availableLimits.forEach(limit => {
-                if (limit.type === 'credit_cards' && limit.total_available < limit.total_available * 0.2) {
-                    analysis.warnings.push('Kredi kartı limitleriniz kritik seviyede. Harcamalarınızı kontrol edin.');
-                }
-            });
-        }
-
-        // Genel öneriler
-        if (analysis.category === 'excellent' || analysis.category === 'good') {
-            analysis.recommendations.push('Mevcut tasarruf alışkanlığınızı sürdürün.');
-            analysis.recommendations.push('Yatırım yapmayı düşünebilirsiniz.');
-            analysis.recommendations.push('Acil durum fonu oluşturmayı hedefleyin.');
-        } else if (analysis.category === 'warning' || analysis.category === 'critical') {
-            analysis.recommendations.push('Giderlerinizi detaylı analiz edin.');
-            analysis.recommendations.push('Gereksiz harcamaları azaltın.');
-            analysis.recommendations.push('Ek gelir kaynakları arayın.');
-            analysis.recommendations.push('Bütçe planı yapın.');
-        }
-
-        return analysis;
-    };
-
-    // Alert variant'ını belirle
-    const getAlertVariant = (category) => {
-        switch (category) {
-            case 'excellent':
-                return 'success';
-            case 'good':
-                return 'info';
-            case 'balanced':
-                return 'warning';
-            case 'warning':
-                return 'warning';
-            case 'critical':
-                return 'danger';
-            default:
-                return 'info';
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="container mt-4 text-center">
-                <Spinner animation="border" role="status" variant="primary">
-                    <span className="visually-hidden">Yükleniyor...</span>
-                </Spinner>
-                <p className="mt-3">Analiz verileri yükleniyor...</p>
-            </div>
-        );
+      if (analyticsResponse.data.success) {
+        setAnalytics(analyticsResponse.data.analytics);
+      }
+      
+      if (incomesResponse.data.success) {
+        setIncomes(incomesResponse.data.incomes || []);
+      }
+      
+      if (expensesResponse.data.success) {
+        setExpenses(expensesResponse.data.expenses || []);
+      }
+      
+      setAccounts(accountsResponse.data || []);
+      setCreditCards(creditCardsResponse.data || []);
+      
+    } catch (error) {
+      setError('Veriler yüklenirken hata oluştu');
+      console.error('Veri yükleme hatası:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (error) {
-        return (
-            <div className="container mt-4">
-                <Alert variant="danger">
-                    <Alert.Heading>Hata!</Alert.Heading>
-                    <p>{error}</p>
-                    <Button variant="outline-danger" onClick={fetchAnalytics}>
-                        🔄 Tekrar Dene
-                    </Button>
-                </Alert>
-            </div>
-        );
-    }
+  const formatCurrency = (amount) => {
+    const numAmount = Number(amount) || 0;
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY'
+    }).format(numAmount);
+  };
 
-    // Veri yoksa hoş geldin mesajı göster
-    if (!analytics || (analytics.totalIncome === 0 && analytics.totalExpense === 0)) {
-        return (
-            <div className="container mt-4">
-                <div className="text-center mb-5">
-                    <h1 className="display-4 text-primary">📊 Analiz Sayfası</h1>
-                    <p className="lead text-muted">
-                        Finansal analizlerinizi görmek için önce gelir ve gider verilerinizi ekleyin.
-                    </p>
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getIncomeTypeLabel = (type) => {
+    const types = {
+      'salary': 'Maaş',
+      'part_time': 'Ek İş',
+      'rental': 'Kira Geliri',
+      'investment': 'Yatırım',
+      'food_card': 'Yemek Kartı',
+      'other': 'Diğer'
+    };
+    return types[type] || type;
+  };
+
+  const getPaymentMethodLabel = (method) => {
+    const methods = {
+      'cash': 'Nakit',
+      'credit_card': 'Kredi Kartı',
+      'bank_transfer': 'Banka Transferi',
+      'credit_account': 'Kredili Hesap'
+    };
+    return methods[method] || method;
+  };
+
+  // Filtrelenmiş veriler
+  const filteredIncomes = incomes.filter(income => {
+    const matchesSearch = income.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         income.source?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = dateFilter === 'all' || 
+                       (dateFilter === 'thisMonth' && new Date(income.income_date).getMonth() === new Date().getMonth()) ||
+                       (dateFilter === 'lastMonth' && new Date(income.income_date).getMonth() === new Date().getMonth() - 1);
+    return matchesSearch && matchesDate;
+  });
+
+  const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = expense.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         expense.category_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = dateFilter === 'all' || 
+                       (dateFilter === 'thisMonth' && new Date(expense.created_at).getMonth() === new Date().getMonth()) ||
+                       (dateFilter === 'lastMonth' && new Date(expense.created_at).getMonth() === new Date().getMonth() - 1);
+    const matchesCategory = categoryFilter === 'all' || expense.category_name === categoryFilter;
+    return matchesSearch && matchesDate && matchesCategory;
+  });
+
+  // Güvenli sayı dönüşümü ve hesaplama
+  const totalIncome = filteredIncomes.reduce((sum, income) => {
+    const amount = Number(income.amount) || 0;
+    return sum + amount;
+  }, 0);
+  
+  const totalExpense = filteredExpenses.reduce((sum, expense) => {
+    const amount = Number(expense.amount) || 0;
+    return sum + amount;
+  }, 0);
+  
+  const netIncome = totalIncome - totalExpense;
+
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <Spinner animation="border" role="status" variant="primary" size="lg">
+          <span className="visually-hidden">Yükleniyor...</span>
+        </Spinner>
+        <p>Analiz verileri yükleniyor...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mt-4">
+        <Alert variant="danger" className="border-0 shadow">
+          <Alert.Heading>Hata!</Alert.Heading>
+          <p>{error}</p>
+          <Button variant="outline-danger" onClick={fetchAllData}>
+            🔄 Tekrar Dene
+          </Button>
+        </Alert>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dashboard-page">
+      <div className="container-fluid">
+        {/* Header */}
+        <div className="dashboard-header mb-4">
+          <div>
+            <h1 className="dashboard-title">📊 Finansal Analiz & Veri Takibi</h1>
+            <p className="dashboard-subtitle">Tüm finansal verilerinizi detaylı olarak takip edin</p>
+          </div>
+          <div className="dashboard-actions">
+            <Button 
+              variant="outline-primary" 
+              onClick={fetchAllData}
+              disabled={loading}
+              size="sm"
+            >
+              {loading ? 'Yenileniyor...' : '🔄 Yenile'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Filtreleme ve Arama */}
+        <Card className="dashboard-card mb-4">
+          <Card.Header>
+            <h5 className="mb-0">🔍 Filtreleme ve Arama</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={4}>
+                <InputGroup className="mb-3">
+                  <InputGroup.Text><FaSearch /></InputGroup.Text>
+                  <Form.Control
+                    type="text"
+                    placeholder="Başlık, kaynak veya kategori ara..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </InputGroup>
+              </Col>
+              <Col md={3}>
+                <Form.Select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="mb-3"
+                >
+                  <option value="all">Tüm Zamanlar</option>
+                  <option value="thisMonth">Bu Ay</option>
+                  <option value="lastMonth">Geçen Ay</option>
+                </Form.Select>
+              </Col>
+              <Col md={3}>
+                <Form.Select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="mb-3"
+                >
+                  <option value="all">Tüm Kategoriler</option>
+                  {[...new Set(expenses.map(e => e.category_name))].map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setDateFilter('all');
+                    setCategoryFilter('all');
+                  }}
+                  className="w-100"
+                >
+                  <FaFilter /> Temizle
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+
+        {/* Özet Kartları */}
+        <Row className="mb-4">
+          <Col lg={3} md={6} className="mb-4">
+            <Card className="stat-card stat-card-income">
+              <Card.Body className="d-flex align-items-center">
+                <div className="stat-icon">
+                  <FaArrowUp />
                 </div>
+                <div className="stat-content">
+                  <div className="stat-label">Toplam Gelir</div>
+                  <div className="stat-value text-success">{formatCurrency(totalIncome)}</div>
+                  <Badge bg="success" className="stat-badge">
+                    {filteredIncomes.length} işlem
+                  </Badge>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col lg={3} md={6} className="mb-4">
+            <Card className="stat-card stat-card-expense">
+              <Card.Body className="d-flex align-items-center">
+                <div className="stat-icon">
+                  <FaArrowDown />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Toplam Gider</div>
+                  <div className="stat-value text-danger">{formatCurrency(totalExpense)}</div>
+                  <Badge bg="danger" className="stat-badge">
+                    {filteredExpenses.length} işlem
+                  </Badge>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col lg={3} md={6} className="mb-4">
+            <Card className={`stat-card ${netIncome >= 0 ? 'stat-card-net' : 'stat-card-expense'}`}>
+              <Card.Body className="d-flex align-items-center">
+                <div className="stat-icon">
+                  <FaChartLine />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Net Gelir</div>
+                  <div className={`stat-value ${netIncome >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {formatCurrency(netIncome)}
+                  </div>
+                  <Badge bg={netIncome >= 0 ? 'success' : 'danger'} className="stat-badge">
+                    {netIncome >= 0 ? 'Pozitif' : 'Negatif'}
+                  </Badge>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col lg={3} md={6} className="mb-4">
+            <Card className="stat-card stat-card-savings">
+              <Card.Body className="d-flex align-items-center">
+                <div className="stat-icon">
+                  <FaMoneyBillWave />
+                </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Tasarruf Oranı</div>
+                    <div className="stat-value text-warning">
+                      %{totalIncome > 0 ? Math.round((netIncome / totalIncome) * 100 * 10) / 10 : 0}
+                    </div>
+                    <Badge bg="warning" className="stat-badge">
+                      Hedef: %20
+                    </Badge>
+                  </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-                {/* Hızlı Başlangıç */}
-                <Row className="mb-4">
+        {/* Tab Navigation */}
+        <Card className="dashboard-card mb-4">
+          <Card.Body className="p-0">
+            <Tabs
+              activeKey={activeTab}
+              onSelect={(k) => setActiveTab(k)}
+              className="border-bottom"
+            >
+              <Tab eventKey="overview" title="📊 Genel Bakış">
+                <div className="p-4">
+                  <Row>
                     <Col md={6}>
-                        <Card className="text-center border-success h-100 shadow">
-                            <Card.Body>
-                                <h2 className="text-success mb-3">💰</h2>
-                                <h4>İlk Gelirinizi Ekleyin</h4>
-                                <p className="text-muted">
-                                    Maaş, kira geliri veya diğer gelirlerinizi kaydedin.
-                                </p>
-                                <Button 
-                                    as={Link} 
-                                    to="/incomes/new" 
-                                    variant="success" 
-                                    size="lg"
-                                    className="px-4"
-                                >
-                                    💰 Gelir Ekle
-                                </Button>
-                            </Card.Body>
-                        </Card>
+                      <h5 className="mb-3">💰 Gelir Dağılımı</h5>
+                      {incomes.length > 0 ? (
+                        <div className="table-responsive">
+                          <Table hover size="sm">
+                            <thead>
+                              <tr>
+                                <th>Tür</th>
+                                <th>Adet</th>
+                                <th>Tutar</th>
+                                <th>%</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(
+                                incomes.reduce((acc, income) => {
+                                  const type = income.income_type || 'other';
+                                  const amount = Number(income.amount) || 0;
+                                  if (!acc[type]) acc[type] = { count: 0, total: 0 };
+                                  acc[type].count++;
+                                  acc[type].total += amount;
+                                  return acc;
+                                }, {})
+                              ).map(([type, data]) => (
+                                <tr key={type}>
+                                  <td>{getIncomeTypeLabel(type)}</td>
+                                  <td>{data.count}</td>
+                                  <td>{formatCurrency(data.total)}</td>
+                                  <td>{totalIncome > 0 ? Math.round((data.total / totalIncome) * 100 * 10) / 10 : 0}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <Alert variant="info">Henüz gelir kaydı bulunmuyor</Alert>
+                      )}
                     </Col>
                     <Col md={6}>
-                        <Card className="text-center border-danger h-100 shadow">
-                            <Card.Body>
-                                <h2 className="text-danger mb-3">💸</h2>
-                                <h4>İlk Giderinizi Ekleyin</h4>
-                                <p className="text-muted">
-                                    Ev kirası, faturalar, market alışverişi gibi giderlerinizi kaydedin.
-                                </p>
-                                <Button 
-                                    as={Link} 
-                                    to="/expenses/new" 
-                                    variant="danger" 
-                                    size="lg"
-                                    className="px-4"
-                                >
-                                    💸 Gider Ekle
-                                </Button>
-                            </Card.Body>
-                        </Card>
+                      <h5 className="mb-3">💸 Gider Dağılımı</h5>
+                      {expenses.length > 0 ? (
+                        <div className="table-responsive">
+                          <Table hover size="sm">
+                            <thead>
+                              <tr>
+                                <th>Kategori</th>
+                                <th>Adet</th>
+                                <th>Tutar</th>
+                                <th>%</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(
+                                expenses.reduce((acc, expense) => {
+                                  const category = expense.category_name || 'Diğer';
+                                  const amount = Number(expense.amount) || 0;
+                                  if (!acc[category]) acc[category] = { count: 0, total: 0 };
+                                  acc[category].count++;
+                                  acc[category].total += amount;
+                                  return acc;
+                                }, {})
+                              ).map(([category, data]) => (
+                                <tr key={category}>
+                                  <td>{category}</td>
+                                  <td>{data.count}</td>
+                                  <td>{formatCurrency(data.total)}</td>
+                                  <td>{totalExpense > 0 ? Math.round((data.total / totalExpense) * 100 * 10) / 10 : 0}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <Alert variant="info">Henüz gider kaydı bulunmuyor</Alert>
+                      )}
                     </Col>
-                </Row>
+                  </Row>
+                </div>
+              </Tab>
 
-                {/* Özellikler */}
-                <Row className="mb-4">
-                    <Col md={12}>
-                        <Card className="shadow">
+              <Tab eventKey="incomes" title="💰 Gelirler">
+                <div className="p-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Gelir Listesi ({filteredIncomes.length})</h5>
+                    <Button as={Link} to="/incomes/new" variant="success" size="sm">
+                      💰 Yeni Gelir Ekle
+                    </Button>
+                  </div>
+                  {filteredIncomes.length > 0 ? (
+                    <div className="table-responsive">
+                      <Table hover>
+                        <thead className="table-light">
+                          <tr>
+                            <th>Tarih</th>
+                            <th>Başlık</th>
+                            <th>Tür</th>
+                            <th>Kaynak</th>
+                            <th>Tutar</th>
+                            <th>İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredIncomes.map((income) => (
+                            <tr key={income.id}>
+                              <td>{formatDate(income.income_date)}</td>
+                              <td className="fw-bold">{income.title || 'Başlıksız'}</td>
+                              <td>
+                                <Badge bg="success">
+                                  {getIncomeTypeLabel(income.income_type)}
+                                </Badge>
+                              </td>
+                              <td>{income.source || 'Bilinmiyor'}</td>
+                              <td className="text-success fw-bold">
+                                {formatCurrency(income.amount)}
+                              </td>
+                              <td>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedItem(income);
+                                    setShowIncomeModal(true);
+                                  }}
+                                >
+                                  <FaEye />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <Alert variant="info">
+                      Arama kriterlerinize uygun gelir kaydı bulunamadı.
+                    </Alert>
+                  )}
+                </div>
+              </Tab>
+
+              <Tab eventKey="expenses" title="💸 Giderler">
+                <div className="p-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Gider Listesi ({filteredExpenses.length})</h5>
+                    <Button as={Link} to="/expenses/new" variant="danger" size="sm">
+                      💸 Yeni Gider Ekle
+                    </Button>
+                  </div>
+                  {filteredExpenses.length > 0 ? (
+                    <div className="table-responsive">
+                      <Table hover>
+                        <thead className="table-light">
+                          <tr>
+                            <th>Tarih</th>
+                            <th>Başlık</th>
+                            <th>Kategori</th>
+                            <th>Ödeme Yöntemi</th>
+                            <th>Tutar</th>
+                            <th>İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredExpenses.map((expense) => (
+                            <tr key={expense.id}>
+                              <td>{formatDate(expense.created_at)}</td>
+                              <td className="fw-bold">{expense.title || 'Başlıksız'}</td>
+                              <td>
+                                <Badge 
+                                  bg="secondary"
+                                  style={{ backgroundColor: expense.category_color || '#6c757d' }}
+                                >
+                                  {expense.category_name || 'Kategori Yok'}
+                                </Badge>
+                              </td>
+                              <td>{getPaymentMethodLabel(expense.payment_method)}</td>
+                              <td className="text-danger fw-bold">
+                                {formatCurrency(expense.amount)}
+                              </td>
+                              <td>
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedItem(expense);
+                                    setShowExpenseModal(true);
+                                  }}
+                                >
+                                  <FaEye />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <Alert variant="info">
+                      Arama kriterlerinize uygun gider kaydı bulunamadı.
+                    </Alert>
+                  )}
+                </div>
+              </Tab>
+
+              <Tab eventKey="accounts" title="🏦 Hesaplar">
+                <div className="p-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Hesap Listesi ({accounts.length})</h5>
+                    <Button as={Link} to="/accounts/new" variant="info" size="sm">
+                      🏦 Yeni Hesap Ekle
+                    </Button>
+                  </div>
+                  {accounts.length > 0 ? (
+                    <Row>
+                      {accounts.map((account) => (
+                        <Col md={6} lg={4} key={account.id} className="mb-3">
+                          <Card className="h-100">
                             <Card.Header className="bg-info text-white">
-                                <h5 className="mb-0">✨ Analiz Özellikleri</h5>
+                              <h6 className="mb-0">{account.account_name}</h6>
                             </Card.Header>
                             <Card.Body>
-                                <Row>
-                                    <Col md={4} className="text-center mb-3">
-                                        <h4 className="text-primary">📈</h4>
-                                        <h6>Aylık Trendler</h6>
-                                        <small className="text-muted">
-                                            Gelir-gider trendlerinizi aylık olarak takip edin
-                                        </small>
-                                    </Col>
-                                    <Col md={4} className="text-center mb-3">
-                                        <h4 className="text-warning">📊</h4>
-                                        <h6>Kategori Analizi</h6>
-                                        <small className="text-muted">
-                                            Giderlerinizi kategorilere göre analiz edin
-                                        </small>
-                                    </Col>
-                                    <Col md={4} className="text-center mb-3">
-                                        <h4 className="text-success">💳</h4>
-                                        <h6>Limit Takibi</h6>
-                                        <small className="text-muted">
-                                            Kullanılabilir limitlerinizi gerçek zamanlı görün
-                                        </small>
-                                    </Col>
-                                </Row>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
-
-                {/* Dashboard'a Dön */}
-                <div className="text-center mb-4">
-                    <Button 
-                        as={Link} 
-                        to="/" 
-                        variant="outline-primary" 
-                        size="lg"
-                        className="px-4"
-                    >
-                        🏠 Dashboard'a Dön
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
-    const { totalIncome, totalExpense, netIncome, categoryExpenses, monthlyTrend, availableLimits } = analytics;
-
-    return (
-        <div className="container mt-4">
-            <BackButton />
-            <h2 className="mb-4">📊 Finansal Analiz</h2>
-
-            {/* Genel Özet */}
-            <Row className="mb-4">
-                <Col md={4}>
-                    <Card className="text-center border-success h-100">
-                        <Card.Body>
-                            <h3 className="text-success">💰</h3>
-                            <h5>Toplam Gelir</h5>
-                            <h3 className="text-success">{formatCurrency(totalIncome)}</h3>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={4}>
-                    <Card className="text-center border-danger h-100">
-                        <Card.Body>
-                            <h3 className="text-danger">💸</h3>
-                            <h5>Toplam Gider</h5>
-                            <h3 className="text-danger">{formatCurrency(totalExpense)}</h3>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={4}>
-                    <Card className={`text-center h-100 ${netIncome >= 0 ? 'border-success' : 'border-danger'}`}>
-                        <Card.Body>
-                            <h3 className={netIncome >= 0 ? 'text-success' : 'text-danger'}>
-                                {netIncome >= 0 ? '📈' : '📉'}
-                            </h3>
-                            <h5>Net Gelir</h5>
-                            <h3 className={netIncome >= 0 ? 'text-success' : 'text-danger'}>
-                                {formatCurrency(netIncome)}
-                            </h3>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* AI Destekli Analiz Notu */}
-            <Row className="mb-4">
-                <Col md={12}>
-                    <Card className="shadow">
-                        <Card.Header className="bg-gradient text-white" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                            <div className="d-flex justify-content-between align-items-center">
-                                                                    <h5 className="mb-0"><FaRobot className="me-2" />AI Destekli Finansal Analiz</h5>
-                                <Button 
-                                    variant="light" 
-                                    size="sm"
-                                    onClick={generateAIAnalysis}
-                                    disabled={generatingAnalysis}
-                                >
-                                    {generatingAnalysis ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            Analiz Oluşturuluyor...
-                                        </>
-                                    ) : (
-                                        '🧠 Analiz Notu Al'
-                                    )}
+                              <div className="mb-2">
+                                <strong>Banka:</strong> {account.bank_name}
+                              </div>
+                              <div className="mb-2">
+                                <strong>Bakiye:</strong> 
+                                <span className={`fw-bold ${(Number(account.current_balance) || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
+                                  {formatCurrency(account.current_balance)}
+                                </span>
+                              </div>
+                              {account.is_credit_account && (
+                                <div className="mb-2">
+                                  <strong>Kredi Limiti:</strong> 
+                                  <span className="fw-bold text-warning">
+                                    {formatCurrency(account.credit_limit)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="mb-2">
+                                <strong>Tür:</strong> 
+                                <Badge bg={account.is_credit_account ? 'warning' : 'success'}>
+                                  {account.is_credit_account ? 'Kredili Hesap' : 'Mevduat Hesabı'}
+                                </Badge>
+                              </div>
+                              <div className="d-grid gap-2">
+                                <Button variant="outline-info" size="sm">
+                                  <FaEdit /> Düzenle
                                 </Button>
-                            </div>
-                        </Card.Header>
-                        <Card.Body>
-                            {!aiAnalysis ? (
-                                <div className="text-center py-4">
-                                    <h6 className="text-muted mb-3">AI destekli finansal analiz notu almak için butona tıklayın</h6>
-                                    <p className="text-muted small">
-                                        Finansal durumunuz analiz edilecek ve size özel öneriler sunulacak
-                                    </p>
-                                </div>
-                            ) : (
-                                <div>
-                                    {/* Özet */}
-                                    <div className={`alert alert-${getAlertVariant(aiAnalysis.category)} mb-3`}>
-                                        <h6 className="mb-1">📋 Finansal Durum Özeti</h6>
-                                        <p className="mb-0 fw-bold">{aiAnalysis.summary}</p>
-                                    </div>
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : (
+                    <Alert variant="info">Henüz hesap kaydı bulunmuyor</Alert>
+                  )}
+                </div>
+              </Tab>
 
-                                    {/* Pozitif Noktalar */}
-                                    {aiAnalysis.positivePoints.length > 0 && (
-                                        <div className="mb-3">
-                                            <h6 className="text-success mb-2">✅ Güçlü Yönleriniz</h6>
-                                            <ul className="list-unstyled">
-                                                {aiAnalysis.positivePoints.map((point, index) => (
-                                                    <li key={index} className="text-success mb-1">
-                                                        <FaCheckCircle className="me-2" />
-                                                        {point}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
+              <Tab eventKey="credit-cards" title="💳 Kredi Kartları">
+                <div className="p-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Kredi Kartı Listesi ({creditCards.length})</h5>
+                    <Button as={Link} to="/credit-cards/new" variant="warning" size="sm">
+                      💳 Yeni Kart Ekle
+                    </Button>
+                  </div>
+                  {creditCards.length > 0 ? (
+                    <Row>
+                      {creditCards.map((card) => (
+                        <Col md={6} lg={4} key={card.id} className="mb-3">
+                          <Card className="h-100">
+                            <Card.Header className="bg-warning text-dark">
+                              <h6 className="mb-0">{card.card_name}</h6>
+                            </Card.Header>
+                            <Card.Body>
+                              <div className="mb-2">
+                                <strong>Banka:</strong> {card.bank_name}
+                              </div>
+                              <div className="mb-2">
+                                <strong>Toplam Limit:</strong> 
+                                <span className="fw-bold text-warning">
+                                  {formatCurrency(card.credit_limit)}
+                                </span>
+                              </div>
+                              <div className="mb-2">
+                                <strong>Kalan Limit:</strong> 
+                                <span className="fw-bold text-success">
+                                  {formatCurrency(card.remaining_limit)}
+                                </span>
+                              </div>
+                              <div className="mb-3">
+                                <strong>Kullanım Oranı:</strong>
+                                {(() => {
+                                  const creditLimit = Number(card.credit_limit) || 0;
+                                  const remainingLimit = Number(card.remaining_limit) || 0;
+                                  const usedAmount = creditLimit - remainingLimit;
+                                  const usagePercentage = creditLimit > 0 ? (usedAmount / creditLimit) * 100 : 0;
+                                  
+                                  return (
+                                    <>
+                                      <ProgressBar 
+                                        variant="warning" 
+                                        now={usagePercentage}
+                                        className="mt-1"
+                                      />
+                                      <small className="text-muted">
+                                        %{Math.round(usagePercentage * 10) / 10} kullanılmış
+                                      </small>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                              <div className="d-grid gap-2">
+                                <Button variant="outline-warning" size="sm">
+                                  <FaEdit /> Düzenle
+                                </Button>
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : (
+                    <Alert variant="info">Henüz kredi kartı kaydı bulunmuyor</Alert>
+                  )}
+                </div>
+              </Tab>
+            </Tabs>
+          </Card.Body>
+        </Card>
 
-                                    {/* Uyarılar */}
-                                    {aiAnalysis.warnings.length > 0 && (
-                                        <div className="mb-3">
-                                            <h6 className="text-warning mb-2">⚠️ Dikkat Edilmesi Gerekenler</h6>
-                                            <ul className="list-unstyled">
-                                                {aiAnalysis.warnings.map((warning, index) => (
-                                                    <li key={index} className="text-warning mb-1">
-                                                        <FaExclamationTriangle className="me-2" />
-                                                        {warning}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
+        {/* Detay Modal'ları */}
+        <Modal show={showIncomeModal} onHide={() => setShowIncomeModal(false)} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>💰 Gelir Detayları</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {selectedItem && (
+              <div>
+                <Row>
+                  <Col md={6}>
+                    <strong>Başlık:</strong> {selectedItem.title}
+                  </Col>
+                  <Col md={6}>
+                    <strong>Tutar:</strong> 
+                    <span className="text-success fw-bold ms-2">
+                      {formatCurrency(selectedItem.amount)}
+                    </span>
+                  </Col>
+                </Row>
+                <hr />
+                <Row>
+                  <Col md={6}>
+                    <strong>Tür:</strong> {getIncomeTypeLabel(selectedItem.income_type)}
+                  </Col>
+                  <Col md={6}>
+                    <strong>Kaynak:</strong> {selectedItem.source}
+                  </Col>
+                </Row>
+                <hr />
+                <Row>
+                  <Col md={6}>
+                    <strong>Tarih:</strong> {formatDate(selectedItem.income_date)}
+                  </Col>
+                  <Col md={6}>
+                    <strong>Açıklama:</strong> {selectedItem.description || 'Açıklama yok'}
+                  </Col>
+                </Row>
+              </div>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowIncomeModal(false)}>
+              Kapat
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-                                    {/* Öneriler */}
-                                    {aiAnalysis.recommendations.length > 0 && (
-                                        <div className="mb-3">
-                                            <h6 className="text-info mb-2">💡 Öneriler</h6>
-                                            <ul className="list-unstyled">
-                                                {aiAnalysis.recommendations.map((recommendation, index) => (
-                                                    <li key={index} className="text-info mb-1">
-                                                        <FaLightbulb className="me-2" />
-                                                        {recommendation}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
+        <Modal show={showExpenseModal} onHide={() => setShowExpenseModal(false)} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>💸 Gider Detayları</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {selectedItem && (
+              <div>
+                <Row>
+                  <Col md={6}>
+                    <strong>Başlık:</strong> {selectedItem.title}
+                  </Col>
+                  <Col md={6}>
+                    <strong>Tutar:</strong> 
+                    <span className="text-danger fw-bold ms-2">
+                      {formatCurrency(selectedItem.amount)}
+                    </span>
+                  </Col>
+                </Row>
+                <hr />
+                <Row>
+                  <Col md={6}>
+                    <strong>Kategori:</strong> {selectedItem.category_name}
+                  </Col>
+                  <Col md={6}>
+                    <strong>Ödeme Yöntemi:</strong> {getPaymentMethodLabel(selectedItem.payment_method)}
+                  </Col>
+                </Row>
+                <hr />
+                <Row>
+                  <Col md={6}>
+                    <strong>Tarih:</strong> {formatDate(selectedItem.created_at)}
+                  </Col>
+                  <Col md={6}>
+                    <strong>Açıklama:</strong> {selectedItem.description || 'Açıklama yok'}
+                  </Col>
+                </Row>
+              </div>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowExpenseModal(false)}>
+              Kapat
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-                                    {/* Yenile Butonu */}
-                                    <div className="text-center mt-3">
-                                        <Button 
-                                            variant="outline-primary" 
-                                            size="sm"
-                                            onClick={generateAIAnalysis}
-                                            disabled={generatingAnalysis}
-                                        >
-                                            🔄 Analizi Yenile
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Kullanılabilir Limitler */}
-            <Row className="mb-4">
-                <Col md={12}>
-                    <Card className="shadow">
-                        <Card.Header className="bg-info text-white">
-                            <h5 className="mb-0">💳 Kullanılabilir Limitler</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Row>
-                                {availableLimits.map((limit, index) => (
-                                    <Col md={6} key={index}>
-                                        <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <span className="fw-bold">
-                                                {limit.type === 'accounts' ? '🏦 Hesaplar' : '💳 Kredi Kartları'}
-                                            </span>
-                                            <Badge bg="primary" className="fs-6">
-                                                {limit.count} adet
-                                            </Badge>
-                                        </div>
-                                        <div className="d-flex justify-content-between align-items-center">
-                                            <span>Kullanılabilir:</span>
-                                            <span className="fw-bold text-success">
-                                                {formatCurrency(limit.total_available)}
-                                            </span>
-                                        </div>
-                                        <ProgressBar 
-                                            now={limit.total_available > 0 ? 100 : 0} 
-                                            variant="success" 
-                                            className="mt-2"
-                                        />
-                                    </Col>
-                                ))}
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Kategori Bazında Gider Dağılımı */}
-            <Row className="mb-4">
-                <Col md={12}>
-                    <Card className="shadow">
-                        <Card.Header className="bg-warning text-dark">
-                            <h5 className="mb-0">📊 Kategori Bazında Gider Dağılımı</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            {categoryExpenses.length > 0 ? (
-                                <Row>
-                                    {categoryExpenses.map((category, index) => (
-                                        <Col md={6} lg={4} key={index} className="mb-3">
-                                            <Card className="border-0 shadow-sm">
-                                                <Card.Body>
-                                                    <div className="d-flex justify-content-between align-items-center mb-2">
-                                                        <span className="fw-bold">{category.name}</span>
-                                                        <Badge 
-                                                            style={{ backgroundColor: getCategoryColor(category.color) }}
-                                                        >
-                                                            {formatPercentage(category.total, totalExpense)}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="d-flex justify-content-between align-items-center mb-2">
-                                                        <span>Tutar:</span>
-                                                        <span className="fw-bold text-danger">
-                                                            {formatCurrency(category.total)}
-                                                        </span>
-                                                    </div>
-                                                    <ProgressBar 
-                                                        now={(category.total / totalExpense) * 100} 
-                                                        style={{ backgroundColor: getCategoryColor(category.color) }}
-                                                        className="mt-2"
-                                                    />
-                                                </Card.Body>
-                                            </Card>
-                                        </Col>
-                                    ))}
-                                </Row>
-                            ) : (
-                                <Alert variant="info">
-                                    Henüz gider kategorisi bulunmuyor. İlk giderinizi ekleyerek başlayın.
-                                </Alert>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Aylık Trend */}
-            <Row className="mb-4">
-                <Col md={12}>
-                    <Card className="shadow">
-                        <Card.Header className="bg-primary text-white">
-                            <h5 className="mb-0">📈 Aylık Gelir-Gider Trendi</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            {monthlyTrend.length > 0 ? (
-                                <div className="table-responsive">
-                                    <table className="table table-hover">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th>Ay</th>
-                                                <th className="text-success">Gelir</th>
-                                                <th className="text-danger">Gider</th>
-                                                <th>Net</th>
-                                                <th>Trend</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {monthlyTrend.map((month, index) => {
-                                                const monthNet = month.income - month.expense;
-                                                const monthName = new Date(month.month + '-01').toLocaleDateString('tr-TR', {
-                                                    year: 'numeric',
-                                                    month: 'long'
-                                                });
-                                                
-                                                return (
-                                                    <tr key={index}>
-                                                        <td className="fw-bold">{monthName}</td>
-                                                        <td className="text-success fw-bold">
-                                                            {formatCurrency(month.income)}
-                                                        </td>
-                                                        <td className="text-danger fw-bold">
-                                                            {formatCurrency(month.expense)}
-                                                        </td>
-                                                        <td className={`fw-bold ${monthNet >= 0 ? 'text-success' : 'text-danger'}`}>
-                                                            {formatCurrency(monthNet)}
-                                                        </td>
-                                                        <td>
-                                                            <Badge 
-                                                                bg={monthNet >= 0 ? 'success' : 'danger'}
-                                                                className="fs-6"
-                                                            >
-                                                                {monthNet >= 0 ? '📈 Pozitif' : '📉 Negatif'}
-                                                            </Badge>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <Alert variant="info">
-                                    Henüz aylık trend verisi bulunmuyor. Gelir ve gider ekleyerek trend verilerinizi oluşturun.
-                                </Alert>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Özet Kartları */}
-            <Row className="mb-4">
-                <Col md={6}>
-                    <Card className="text-center border-info h-100">
-                        <Card.Body>
-                            <h3 className="text-info">💡</h3>
-                            <h6>Tasarruf Oranı</h6>
-                            <h4 className="text-info">
-                                {totalIncome > 0 ? `${((netIncome / totalIncome) * 100).toFixed(1)}%` : '0%'}
-                            </h4>
-                            <small className="text-muted">
-                                Gelirlerinizin ne kadarını tasarruf ediyorsunuz
-                            </small>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={6}>
-                    <Card className="text-center border-warning h-100">
-                        <Card.Body>
-                            <h3 className="text-warning">⚖️</h3>
-                            <h6>Gelir-Gider Oranı</h6>
-                            <h4 className="text-warning">
-                                {totalIncome > 0 ? `${((totalExpense / totalIncome) * 100).toFixed(1)}%` : '0%'}
-                            </h4>
-                            <small className="text-muted">
-                                Gelirlerinizin ne kadarını harcıyorsunuz
-                            </small>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Hızlı Erişim */}
-            <Row className="mb-4">
-                <Col md={12}>
-                    <Card className="shadow">
-                        <Card.Header className="bg-success text-white">
-                            <h5 className="mb-0">🚀 Hızlı Erişim</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Row>
-                                <Col md={4} className="mb-2">
-                                    <Button 
-                                        as={Link} 
-                                        to="/incomes/new" 
-                                        variant="success" 
-                                        size="lg" 
-                                        className="w-100"
-                                    >
-                                        💰 Gelir Ekle
-                                    </Button>
-                                </Col>
-                                <Col md={4} className="mb-2">
-                                    <Button 
-                                        as={Link} 
-                                        to="/expenses/new" 
-                                        variant="danger" 
-                                        size="lg" 
-                                        className="w-100"
-                                    >
-                                        💸 Gider Ekle
-                                    </Button>
-                                </Col>
-                                <Col md={4} className="mb-2">
-                                    <Button 
-                                        as={Link} 
-                                        to="/" 
-                                        variant="primary" 
-                                        size="lg" 
-                                        className="w-100"
-                                    >
-                                        🏠 Dashboard
-                                    </Button>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Yenile Butonu */}
-            <div className="text-center mb-4">
-                <button 
-                    className="btn btn-primary btn-lg"
-                    onClick={fetchAnalytics}
-                    disabled={loading}
+        {/* Hızlı Erişim */}
+        <Card className="dashboard-card mb-4">
+          <Card.Header>
+            <h5 className="mb-0">🚀 Hızlı Erişim</h5>
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col md={3} className="mb-2">
+                <Button 
+                  as={Link} 
+                  to="/incomes/new" 
+                  variant="success" 
+                  size="lg" 
+                  className="w-100 quick-action-btn"
                 >
-                    {loading ? 'Yenileniyor...' : '🔄 Verileri Yenile'}
-                </button>
-            </div>
+                  💰 Gelir Ekle
+                </Button>
+              </Col>
+              <Col md={3} className="mb-2">
+                <Button 
+                  as={Link} 
+                  to="/expenses/new" 
+                  variant="danger" 
+                  size="lg" 
+                  className="w-100 quick-action-btn"
+                >
+                  💸 Gider Ekle
+                </Button>
+              </Col>
+              <Col md={3} className="mb-2">
+                <Button 
+                  as={Link} 
+                  to="/accounts/new" 
+                  variant="info" 
+                  size="lg" 
+                  className="w-100 quick-action-btn"
+                >
+                  🏦 Hesap Ekle
+                </Button>
+              </Col>
+              <Col md={3} className="mb-2">
+                <Button 
+                  as={Link} 
+                  to="/credit-cards/new" 
+                  variant="warning" 
+                  size="lg" 
+                  className="w-100 quick-action-btn"
+                >
+                  💳 Kart Ekle
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+
+        {/* Footer */}
+        <div className="text-center mb-4">
+          <p className="text-muted">
+            Son güncelleme: {new Date().toLocaleDateString('tr-TR', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </p>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default Analytics;
