@@ -2,42 +2,117 @@ import React, { useState, useEffect } from 'react';
 import { 
   Container, Row, Col, Card, Button, Form, 
   Alert, Table, Badge, Modal, ProgressBar,
-  Spinner, Accordion, Nav
+  Spinner, Accordion, Nav, Navbar, Dropdown,
+  Tabs, Tab, InputGroup, FormControl, ButtonGroup,
+  ListGroup, ListGroupItem, OverlayTrigger, Tooltip,
+  Popover, Overlay, Modal as BootstrapModal
 } from 'react-bootstrap';
 import './AdminPanel.css';
 import { 
   FaUsers, FaChartBar, FaDatabase, FaCog, 
   FaTrash, FaPlus, FaEye, FaEdit, FaBan,
   FaCheck, FaExclamationTriangle, FaServer,
-  FaHdd, FaBars, FaTimes,
-  FaCode, FaDownload,
-  FaSearch, FaClock, FaUpload
+  FaHdd, FaBars, FaTimes, FaCode, FaDownload,
+  FaSearch, FaClock, FaUpload, FaCrown, FaShieldAlt,
+  FaKey, FaLock, FaUnlock, FaSave, FaUndo,
+  FaCopy, FaPaste, FaFileExport, FaFileImport,
+  FaHistory, FaBackup, FaRestore, FaSync,
+  FaBell, FaEnvelope, FaPhone, FaMapMarker,
+  FaGlobe, FaLanguage, FaPalette, FaFont,
+  FaCalendar, FaThermometerHalf, FaNetworkWired, 
+  FaWifi, FaMemory, FaMicrochip, FaDesktop, 
+  FaMobile, FaTablet, FaLaptop, FaCloud, 
+  FaCloudRain, FaSun, FaMoon, FaStar, FaHeart, 
+  FaThumbsUp, FaThumbsDown, FaQuestionCircle, 
+  FaInfoCircle, FaExclamationCircle, FaCheckCircle, 
+  FaTimesCircle, FaArrowUp, FaArrowDown, 
+  FaArrowLeft, FaArrowRight, FaExpand, FaCompress, 
+  FaFilter, FaSort, FaSortUp, FaSortDown, 
+  FaColumns, FaList, FaTh, FaThLarge, FaThList, FaTable,
+  FaCalendarAlt, FaCalendarDay, FaCalendarWeek, 
+  FaCalendarMonth, FaCalendarCheck, FaCalendarTimes, 
+  FaCalendarMinus, FaCalendarPlus, FaUserCog, 
+  FaUserShield, FaUserTie, FaUserGraduate, 
+  FaUserNinja, FaUserSecret, FaUserAstronaut, 
+  FaUserInjured, FaUserCheck, FaUserTimes, 
+  FaUserPlus, FaUserMinus, FaUserEdit, FaUserLock,
+  FaUserUnlock, FaUserClock, FaUserTag, 
+  FaUserFriends, FaSignInAlt, FaSignOutAlt
 } from 'react-icons/fa';
 
 const AdminPanel = () => {
+  // ==================== AUTHENTICATION STATE ====================
   const [adminPassword, setAdminPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  
+  // ==================== LAYOUT STATE ====================
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   
-  // Dashboard verileri
-  const [dashboardData, setDashboardData] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [systemParams, setSystemParams] = useState(null);
-  const [newBankName, setNewBankName] = useState('');
-  
-  // Sistem parametreleri düzenleme state'leri
-  const [editingSystemParams, setEditingSystemParams] = useState(false);
-  const [systemConfigForm, setSystemConfigForm] = useState({
-    database: {},
-    application: {},
-    security: {}
+  // ==================== DASHBOARD STATE ====================
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      totalUsers: 0,
+      activeUsers: 0,
+      totalAccounts: 0,
+      totalCreditCards: 0,
+      totalIncomes: 0,
+      totalExpenses: 0,
+      recentUsers: 0,
+      totalRentExpenses: 0,
+      systemUptime: 0,
+      memoryUsage: 0,
+      cpuUsage: 0,
+      diskUsage: 0,
+      networkTraffic: 0,
+      activeSessions: 0,
+      errorRate: 0,
+      responseTime: 0
+    },
+    lastLoginUsers: [],
+    recentActivities: [],
+    systemAlerts: [],
+    performanceMetrics: {}
   });
   
-  // Sistem parametreleri yönetimi state'leri
+  // ==================== USERS MANAGEMENT STATE ====================
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userFilterStatus, setUserFilterStatus] = useState('all');
+  const [userSortBy, setUserSortBy] = useState('created_at');
+  const [userSortOrder, setUserSortOrder] = useState('desc');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [userForm, setUserForm] = useState({
+    username: '',
+    email: '',
+    full_name: '',
+    is_active: true,
+    role: 'user'
+  });
+  
+  // ==================== BANKS MANAGEMENT STATE ====================
+  const [banks, setBanks] = useState([]);
+  const [filteredBanks, setFilteredBanks] = useState([]);
+  const [bankSearchTerm, setBankSearchTerm] = useState('');
+  const [newBankName, setNewBankName] = useState('');
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankForm, setBankForm] = useState({
+    bank_name: '',
+    bank_code: '',
+    country: 'TR',
+    is_active: true
+  });
+  
+  // ==================== SYSTEM PARAMETERS STATE ====================
+  const [systemParams, setSystemParams] = useState(null);
   const [systemParameters, setSystemParameters] = useState([]);
   const [filteredParameters, setFilteredParameters] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -51,31 +126,194 @@ const AdminPanel = () => {
     param_type: 'string',
     description: '',
     category: 'general',
-    is_editable: true
+    is_editable: true,
+    validation_rules: '',
+    default_value: '',
+    min_value: '',
+    max_value: '',
+    options: '',
+    is_required: false,
+    is_sensitive: false
   });
+
+  // Parametre arama ve filtreleme state'leri
+  const [parameterSearchTerm, setParameterSearchTerm] = useState('');
+  const [parameterFilterCategory, setParameterFilterCategory] = useState('');
+  const [parameterFilterType, setParameterFilterType] = useState('');
+  const [selectedParameter, setSelectedParameter] = useState(null);
+  const [showSensitiveValue, setShowSensitiveValue] = useState(null);
+  
+  // ==================== ADVANCED SYSTEM PARAMETERS STATE ====================
   const [bulkEditMode, setBulkEditMode] = useState(false);
   const [bulkEditParameters, setBulkEditParameters] = useState([]);
   const [importData, setImportData] = useState('');
   const [importOverwrite, setImportOverwrite] = useState(false);
   const [parametersLoading, setParametersLoading] = useState(false);
+  const [parameterHistory, setParameterHistory] = useState([]);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [parameterBackups, setParameterBackups] = useState([]);
+  const [showBackupModal, setShowBackupModal] = useState(false);
   
-  // Modal durumları
+  // ==================== SYSTEM CONFIGURATION STATE ====================
+  const [systemConfig, setSystemConfig] = useState({
+    database: {
+      host: '',
+      port: '',
+      name: '',
+      user: '',
+      ssl_mode: 'require',
+      connection_pool_size: 10,
+      max_connections: 100,
+      timeout: 30000
+    },
+    application: {
+      name: 'Gelir Gider Takip',
+      version: '1.0.0',
+      environment: 'development',
+      debug: false,
+      log_level: 'info',
+      timezone: 'Europe/Istanbul',
+      locale: 'tr-TR',
+      currency: 'TRY',
+      date_format: 'DD/MM/YYYY',
+      time_format: 'HH:mm:ss'
+    },
+    security: {
+      jwt_secret: '',
+      jwt_expires_in: '7d',
+      bcrypt_rounds: 12,
+      password_min_length: 8,
+      password_require_uppercase: true,
+      password_require_lowercase: true,
+      password_require_numbers: true,
+      password_require_symbols: false,
+      max_login_attempts: 5,
+      lockout_duration: 15,
+      session_timeout: 3600,
+      enable_2fa: false,
+      enable_captcha: false,
+      enable_rate_limiting: true,
+      rate_limit_window: 900,
+      rate_limit_max_requests: 100
+    },
+    email: {
+      provider: 'smtp',
+      host: '',
+      port: 587,
+      secure: true,
+      user: '',
+      password: '',
+      from_address: '',
+      from_name: '',
+      enable_notifications: false
+    },
+    notification: {
+      enable_email: false,
+      enable_sms: false,
+      enable_push: false,
+      enable_webhook: false,
+      webhook_url: '',
+      notification_types: {
+        user_registration: true,
+        password_reset: true,
+        account_locked: true,
+        unusual_activity: true,
+        system_alerts: true
+      }
+    },
+    backup: {
+      enable_auto_backup: false,
+      backup_frequency: 'daily',
+      backup_retention: 30,
+      backup_location: 'local',
+      backup_encryption: false,
+      backup_compression: true
+    },
+    monitoring: {
+      enable_monitoring: true,
+      monitoring_interval: 60,
+      alert_thresholds: {
+        cpu_usage: 80,
+        memory_usage: 85,
+        disk_usage: 90,
+        response_time: 5000,
+        error_rate: 5
+      },
+      enable_logging: true,
+      log_retention: 90,
+      enable_analytics: true
+    },
+    ui: {
+      theme: 'light',
+      primary_color: '#007bff',
+      secondary_color: '#6c757d',
+      accent_color: '#28a745',
+      font_family: 'Inter',
+      font_size: '14px',
+      enable_animations: true,
+      enable_tooltips: true,
+      enable_shortcuts: true,
+      sidebar_position: 'left',
+      sidebar_width: 250,
+      enable_breadcrumbs: true,
+      enable_search: true
+    }
+  });
+  
+  // ==================== MODAL STATES ====================
   const [showResetModal, setShowResetModal] = useState(false);
   const [showMockDataModal, setShowMockDataModal] = useState(false);
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  
+  // ==================== UTILITY FUNCTIONS ====================
+  const showMessage = (type, text, duration = 5000) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), duration);
+  };
 
-  // Admin girişi
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('tr-TR');
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY'
+    }).format(amount);
+  };
+
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatUptime = (seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${days}g ${hours}s ${minutes}d`;
+  };
+
+  // ==================== API FUNCTIONS ====================
+  
+  // Admin Authentication
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     if (!adminPassword) {
-      setMessage({ type: 'danger', text: 'Admin şifresi gerekli' });
+      showMessage('danger', 'Admin şifresi gerekli');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch('http://localhost:5000/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminPassword })
@@ -83,2711 +321,1821 @@ const AdminPanel = () => {
 
       if (response.ok) {
         setIsAuthenticated(true);
-        setMessage({ type: 'success', text: 'Admin girişi başarılı!' });
+        showMessage('success', 'Admin girişi başarılı!');
         fetchDashboardData();
         fetchUsers();
-        fetchSystemParams();
         fetchBanks();
         fetchSystemParameters();
+        fetchSystemConfig();
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Geçersiz admin şifresi' });
+        const error = await response.json();
+        showMessage('danger', error.message || 'Admin girişi başarısız');
       }
     } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
+      console.error('Admin login hatası:', error);
+      showMessage('danger', 'Bağlantı hatası');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // Dashboard verilerini getir
+  // Dashboard Data
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard', {
+      const response = await fetch('http://localhost:5000/api/admin/dashboard', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminPassword: adminPassword
+        })
       });
       
       if (response.ok) {
         const data = await response.json();
-        setDashboardData(data);
+        setDashboardData(prev => ({
+          ...prev,
+          stats: { ...prev.stats, ...data.dashboard }
+        }));
       }
     } catch (error) {
-      console.error('Dashboard veri hatası:', error);
+      console.error('Dashboard veri getirme hatası:', error);
     }
   };
 
-  // Kullanıcıları getir
+  // Users Management
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch('http://localhost:5000/api/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminPassword: adminPassword
+        })
       });
       
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
+        setFilteredUsers(data.users);
       }
     } catch (error) {
-      console.error('Kullanıcı listesi hatası:', error);
+      console.error('Kullanıcılar getirme hatası:', error);
     }
   };
 
-  // Bankaları getir
+  // Banks Management
   const fetchBanks = async () => {
     try {
-      const response = await fetch('/api/banks', {
+      const response = await fetch('http://localhost:5000/api/banks', {
         method: 'GET',
-        headers: { 
-          'Content-Type': 'application/json',
-          'admin-password': adminPassword
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (response.ok) {
-        // const data = await response.json();
-        // setBanks(data || []);
+        const data = await response.json();
+        setBanks(data);
+        setFilteredBanks(data);
       }
     } catch (error) {
       console.error('Bankalar getirme hatası:', error);
     }
   };
 
-  // Yeni banka ekle
-  const addBank = async () => {
-    if (!newBankName.trim()) {
-      setMessage({ type: 'danger', text: 'Banka adı boş olamaz' });
-      return;
-    }
-
+  // System Parameters
+  const fetchSystemParameters = async () => {
+    setParametersLoading(true);
     try {
-      const response = await fetch('/api/banks', {
+      const response = await fetch('http://localhost:5000/api/admin/system-parameters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          bank_name: newBankName.trim(),
-          adminPassword 
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminPassword: adminPassword
         })
       });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Banka başarıyla eklendi!' });
-        setNewBankName('');
-        fetchBanks();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.error || 'Banka eklenirken hata oluştu' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
-
-  // Duplicate bankaları temizle
-  const cleanDuplicateBanks = async () => {
-    if (!window.confirm('⚠️ Duplicate bankaları temizlemek istediğinizden emin misiniz?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/banks/clean-duplicates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessage({ type: 'success', text: data.message });
-        fetchBanks();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.error || 'Duplicate temizleme hatası' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
-
-  // Tüm bankaları reset et
-  const resetAllBanks = async () => {
-    if (!window.confirm('⚠️ DİKKAT: Tüm banka listesi temizlenecek ve yeniden oluşturulacak. Bu işlem geri alınamaz! Devam etmek istiyor musunuz?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/banks/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessage({ type: 'success', text: data.message });
-        fetchBanks();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.error || 'Banka reset hatası' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
-
-  // Tek banka sil
-  // const deleteBank = async (bankId, bankName) => {
-  //   if (!window.confirm(`⚠️ "${bankName}" bankasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) {
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await fetch(`/api/banks/${bankId}`, {
-  //       method: 'DELETE',
-  //       headers: { 
-  //         'Content-Type': 'application/json',
-  //         'admin-password': adminPassword
-  //       }
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setMessage({ type: 'success', text: data.message });
-  //       fetchBanks();
-  //     } else {
-  //       const errorData = await response.json();
-  //       setMessage({ type: 'danger', text: errorData.error || 'Banka silme hatası' });
-  //     }
-  //   } catch (error) {
-  //     setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-  //   }
-  // };
-
-  // Sistem parametrelerini getir
-  const fetchSystemParams = async () => {
-    try {
-      const response = await fetch('/api/admin/system-params', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
-      });
       
       if (response.ok) {
         const data = await response.json();
-        setSystemParams(data.systemParams);
-        
-        // Form state'ini güncelle
-        if (data.systemParams.systemConfig) {
-          setSystemConfigForm(data.systemParams.systemConfig);
-        }
-      }
-    } catch (error) {
-      console.error('Sistem parametreleri hatası:', error);
-    }
-  };
-
-  // Sistem parametrelerini getir
-  const fetchSystemParameters = async () => {
-    try {
-      setParametersLoading(true);
-      console.log('Sistem parametreleri yükleniyor...');
-      const response = await fetch('/api/admin/system-parameters', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Sistem parametreleri yüklendi:', data);
-        if (data.success && data.parameters) {
-          setSystemParameters(data.parameters);
-          setFilteredParameters(data.parameters);
-        } else {
-          console.error('Sistem parametreleri verisi bulunamadı:', data);
-          setMessage({ type: 'warning', text: 'Sistem parametreleri yüklenemedi' });
-        }
+        setSystemParameters(data.parameters);
+        applyParameterFilters(data.parameters);
       } else {
-        const errorData = await response.json();
-        console.error('Sistem parametreleri API hatası:', errorData);
-        setMessage({ type: 'danger', text: errorData.message || 'Sistem parametreleri alınamadı' });
+        const error = await response.json();
+        console.error('Sistem parametreleri API hatası:', error);
+        showMessage('danger', error.message || 'Sistem parametreleri alınamadı');
       }
     } catch (error) {
-      console.error('Sistem parametreleri listesi hatası:', error);
-      setMessage({ type: 'danger', text: 'Sistem parametreleri yüklenirken bağlantı hatası oluştu' });
+      console.error('Sistem parametreleri getirme hatası:', error);
+      showMessage('danger', 'Sistem parametreleri yüklenirken bağlantı hatası oluştu');
     } finally {
       setParametersLoading(false);
     }
   };
 
-  // Sistem parametrelerini güncelle
-  const updateSystemParams = async () => {
+  // Parametre filtrelerini uygula
+  const applyParameterFilters = (parameters) => {
+    const filtered = parameters.filter(param => {
+      const matchesSearch = !parameterSearchTerm || 
+        param.param_key.toLowerCase().includes(parameterSearchTerm.toLowerCase()) ||
+        (param.description && param.description.toLowerCase().includes(parameterSearchTerm.toLowerCase())) ||
+        param.param_value.toLowerCase().includes(parameterSearchTerm.toLowerCase());
+      const matchesCategory = !parameterFilterCategory || param.category === parameterFilterCategory;
+      const matchesType = !parameterFilterType || param.param_type === parameterFilterType;
+      return matchesSearch && matchesCategory && matchesType;
+    });
+    setFilteredParameters(filtered);
+  };
+
+  // Arama ve filtreleme değişikliklerini dinle
+  useEffect(() => {
+    if (systemParameters.length > 0) {
+      applyParameterFilters(systemParameters);
+    }
+  }, [parameterSearchTerm, parameterFilterCategory, parameterFilterType, systemParameters]);
+
+  // Yeni parametre ekle
+  const addSystemParameter = async (parameterData) => {
     try {
-      const response = await fetch('/api/admin/update-system-params', {
+      const response = await fetch('http://localhost:5000/api/admin/add-system-parameter', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          adminPassword,
-          ...systemConfigForm
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...parameterData,
+          adminPassword: adminPassword
         })
       });
       
       if (response.ok) {
         const data = await response.json();
-        setMessage({ type: 'success', text: data.message });
-        setEditingSystemParams(false);
-        fetchSystemParams(); // Güncel verileri yeniden getir
-        
-        if (data.requiresRestart) {
-          setMessage({ 
-            type: 'warning', 
-            text: 'Port değişikliği için sunucu yeniden başlatılmalı!' 
-          });
-        }
+        showMessage('success', data.message);
+        fetchSystemParameters(); // Listeyi yenile
+        return true;
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Güncelleme hatası' });
+        const error = await response.json();
+        showMessage('danger', error.message);
+        return false;
       }
     } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
+      console.error('Parametre ekleme hatası:', error);
+      showMessage('danger', 'Parametre eklenirken hata oluştu');
+      return false;
     }
   };
 
-  // Sistem parametrelerini sıfırla
-  const resetSystemParams = async () => {
-    if (!window.confirm('⚠️ Tüm sistem parametreleri varsayılan değerlere sıfırlanacak. Bu işlem geri alınamaz! Devam etmek istiyor musunuz?')) {
-      return;
-    }
-
+  // Parametre güncelle
+  const updateSystemParameter = async (paramId, paramValue) => {
     try {
-      const response = await fetch('/api/admin/reset-system-params', {
+      const response = await fetch('http://localhost:5000/api/admin/update-system-parameters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          paramId, 
+          paramValue,
+          adminPassword: adminPassword
+        })
       });
       
       if (response.ok) {
         const data = await response.json();
-        setMessage({ type: 'success', text: data.message });
-        fetchSystemParams(); // Güncel verileri yeniden getir
+        showMessage('success', data.message);
+        fetchSystemParameters(); // Listeyi yenile
+        return true;
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Sıfırlama hatası' });
+        const error = await response.json();
+        showMessage('danger', error.message);
+        return false;
       }
     } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
+      console.error('Parametre güncelleme hatası:', error);
+      showMessage('danger', 'Parametre güncellenirken hata oluştu');
+      return false;
     }
   };
 
-  // Kullanıcı durumunu değiştir
-  const toggleUserStatus = async (userId) => {
-    try {
-      const response = await fetch('/api/admin/users/toggle-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword, userId })
-      });
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Kullanıcı durumu güncellendi' });
-        fetchUsers();
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Güncelleme hatası' });
-    }
-  };
-
-  // Veritabanını sıfırla
-  const resetDatabase = async () => {
-    try {
-      const response = await fetch('/api/admin/reset-database', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
-      });
-      
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Veritabanı başarıyla sıfırlandı!' });
-        setShowResetModal(false);
-        fetchDashboardData();
-        fetchUsers();
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Sıfırlama hatası' });
-    }
-  };
-
-  // Mock veri ekle
-  const insertMockData = async () => {
-    try {
-      const response = await fetch('/api/admin/insert-mock-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminPassword })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMessage({ type: 'success', text: data.message });
-        setShowMockDataModal(false);
-        fetchDashboardData();
-        fetchUsers();
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Mock veri ekleme hatası' });
-    }
-  };
-
-  // Admin çıkışı
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setAdminPassword('');
-    setDashboardData(null);
-    setUsers([]);
-    setSystemParams(null);
-    setMessage({ type: '', text: '' });
-  };
-
-  // Sistem parametreleri yönetimi fonksiyonları
-  const updateBulkParameter = (paramId, value) => {
-    setBulkEditParameters(prev => {
-      const existing = prev.find(p => p.id === paramId);
-      if (existing) {
-        return prev.map(p => p.id === paramId ? { ...p, param_value: value } : p);
-      } else {
-        return [...prev, { id: paramId, param_value: value }];
-      }
-    });
-  };
-
-  const openEditModal = (param) => {
-    setEditingParameter(param);
-    setShowParameterModal(true);
-  };
-
-  const handleDeleteParameter = async (paramId) => {
+  // Parametre sil
+  const deleteSystemParameter = async (paramId) => {
     if (!window.confirm('Bu parametreyi silmek istediğinizden emin misiniz?')) {
-      return;
+      return false;
     }
 
     try {
-      const response = await fetch(`/api/admin/system-parameters/${paramId}`, {
+      const response = await fetch('http://localhost:5000/api/admin/delete-system-parameter', {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
           'admin-password': adminPassword
-        }
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Parametre başarıyla silindi!' });
-        fetchSystemParameters();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Silme hatası' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
-
-  const openAddModal = () => {
-    setParameterForm({
-      param_key: '',
-      param_value: '',
-      param_type: 'string',
-      description: '',
-      category: 'general',
-      is_editable: true
-    });
-    setShowAddParameterModal(true);
-  };
-
-  const handleBulkUpdate = async () => {
-    if (bulkEditParameters.length === 0) {
-      setMessage({ type: 'warning', text: 'Güncellenecek parametre bulunamadı' });
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/admin/system-parameters/bulk-update', {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'admin-password': adminPassword
         },
-        body: JSON.stringify({ parameters: bulkEditParameters })
+        body: JSON.stringify({ paramId })
       });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Tüm parametreler başarıyla güncellendi!' });
-        setBulkEditMode(false);
-        setBulkEditParameters([]);
-        fetchSystemParameters();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Toplu güncelleme hatası' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
-
-  const closeBulkEditMode = () => {
-    setBulkEditMode(false);
-    setBulkEditParameters([]);
-  };
-
-  const handleExportParameters = () => {
-    const dataStr = JSON.stringify({ parameters: systemParameters }, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `system-parameters-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportParameters = async () => {
-    if (!importData.trim()) {
-      setMessage({ type: 'warning', text: 'Lütfen JSON verisi girin' });
-      return;
-    }
-
-    try {
-      const parsedData = JSON.parse(importData);
-      if (!parsedData.parameters || !Array.isArray(parsedData.parameters)) {
-        setMessage({ type: 'danger', text: 'Geçersiz JSON formatı' });
-        return;
-      }
-
-      const response = await fetch('/api/admin/system-parameters/import', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'admin-password': adminPassword
-        },
-        body: JSON.stringify({ 
-          parameters: parsedData.parameters,
-          overwrite: importOverwrite
-        })
-      });
-
+      
       if (response.ok) {
         const data = await response.json();
-        setMessage({ type: 'success', text: data.message || 'Parametreler başarıyla içe aktarıldı!' });
-        setImportData('');
-        setImportOverwrite(false);
-        fetchSystemParameters();
+        showMessage('success', data.message);
+        fetchSystemParameters(); // Listeyi yenile
+        return true;
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'İçe aktarma hatası' });
+        const error = await response.json();
+        showMessage('danger', error.message);
+        return false;
       }
     } catch (error) {
-      if (error.name === 'SyntaxError') {
-        setMessage({ type: 'danger', text: 'Geçersiz JSON formatı' });
-      } else {
-        setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-      }
+      console.error('Parametre silme hatası:', error);
+      showMessage('danger', 'Parametre silinirken hata oluştu');
+      return false;
     }
   };
 
-  const handleUpdateParameter = async (e) => {
-    e.preventDefault();
-    if (!editingParameter) return;
-
+  // Parametreleri dışa aktar
+  const exportSystemParameters = async () => {
     try {
-      // Dinamik parametreler için özel güncelleme
-      if (editingParameter.param_key === 'expense_categories_list' || editingParameter.param_key === 'banks_list') {
-        await handleUpdateDynamicParameter(editingParameter);
-        setShowParameterModal(false);
-        setEditingParameter(null);
-        return;
-      }
-
-      // Normal parametre güncelleme
-      const response = await fetch(`/api/admin/system-parameters/${editingParameter.id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'admin-password': adminPassword
-        },
-        body: JSON.stringify(editingParameter)
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Parametre başarıyla güncellendi!' });
-        setShowParameterModal(false);
-        setEditingParameter(null);
-        fetchSystemParameters();
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Güncelleme hatası' });
-      }
-    } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
-    }
-  };
-
-  const handleAddParameter = async (e) => {
-    e.preventDefault();
-    if (!parameterForm.param_key || !parameterForm.param_value) {
-      setMessage({ type: 'warning', text: 'Parametre adı ve değeri zorunludur' });
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/admin/system-parameters/add', {
+      const response = await fetch('http://localhost:5000/api/admin/export-system-parameters', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'admin-password': adminPassword
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(parameterForm)
+        body: JSON.stringify({
+          adminPassword: adminPassword
+        })
       });
-
+      
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Yeni parametre başarıyla eklendi!' });
-        setShowAddParameterModal(false);
-        setParameterForm({
-          param_key: '',
-          param_value: '',
-          param_type: 'string',
-          description: '',
-          category: 'general',
-          is_editable: true
-        });
-        fetchSystemParameters();
+        const data = await response.json();
+        const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `system_parameters_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showMessage('success', 'Parametreler başarıyla dışa aktarıldı');
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'danger', text: errorData.message || 'Ekleme hatası' });
+        const error = await response.json();
+        showMessage('danger', error.message);
       }
     } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
+      console.error('Dışa aktarma hatası:', error);
+      showMessage('danger', 'Dışa aktarma sırasında hata oluştu');
     }
   };
 
-  // Dinamik parametreleri düzenle
-  const handleEditDynamicParameter = (param) => {
-    if (param.param_key === 'expense_categories_list') {
-      // Gider kategorilerini düzenle
-      try {
-        const categories = JSON.parse(param.param_value);
-        setEditingParameter({
-          ...param,
-          categories: categories
-        });
-        setShowParameterModal(true);
-      } catch (error) {
-        setMessage({ type: 'danger', text: 'Gider kategorileri verisi bozuk' });
-      }
-    } else if (param.param_key === 'banks_list') {
-      // Banka listesini düzenle
-      try {
-        const banks = JSON.parse(param.param_value);
-        setEditingParameter({
-          ...param,
-          banks: banks
-        });
-        setShowParameterModal(true);
-      } catch (error) {
-        setMessage({ type: 'danger', text: 'Banka listesi verisi bozuk' });
-      }
-    } else {
-      // Normal parametre düzenleme
-      openEditModal(param);
-    }
-  };
-
-  // Dinamik parametre güncelleme
-  const handleUpdateDynamicParameter = async (param) => {
+  // Parametreleri içe aktar
+  const importSystemParameters = async (file, overwrite = false) => {
     try {
-      if (param.param_key === 'expense_categories_list') {
-        const response = await fetch('/api/admin/expense-categories/update', {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'admin-password': adminPassword
-          },
-          body: JSON.stringify({ categories: param.categories })
-        });
+      const text = await file.text();
+      const parameters = JSON.parse(text);
+      
+      if (!parameters.parameters || !Array.isArray(parameters.parameters)) {
+        showMessage('danger', 'Geçersiz dosya formatı');
+        return false;
+      }
 
-        if (response.ok) {
-          setMessage({ type: 'success', text: 'Gider kategorileri başarıyla güncellendi!' });
-          fetchSystemParameters();
-        } else {
-          const errorData = await response.json();
-          setMessage({ type: 'danger', text: errorData.message || 'Güncelleme hatası' });
-        }
-      } else if (param.param_key === 'banks_list') {
-        const response = await fetch('/api/admin/banks/update', {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'admin-password': adminPassword
-          },
-          body: JSON.stringify({ banks: param.banks })
-        });
-
-        if (response.ok) {
-          setMessage({ type: 'success', text: 'Banka listesi başarıyla güncellendi!' });
-          fetchSystemParameters();
-        } else {
-          const errorData = await response.json();
-          setMessage({ type: 'danger', text: errorData.message || 'Güncelleme hatası' });
-        }
+      const response = await fetch('http://localhost:5000/api/admin/import-system-parameters', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          parameters: parameters.parameters, 
+          overwrite,
+          adminPassword: adminPassword
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        showMessage('success', data.message);
+        fetchSystemParameters(); // Listeyi yenile
+        return true;
+      } else {
+        const error = await response.json();
+        showMessage('danger', error.message);
+        return false;
       }
     } catch (error) {
-      setMessage({ type: 'danger', text: 'Bağlantı hatası' });
+      console.error('İçe aktarma hatası:', error);
+      showMessage('danger', 'İçe aktarma sırasında hata oluştu');
+      return false;
     }
   };
 
-  // Smooth scroll to section
-  const scrollToSection = (sectionId) => {
-    setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
+  // Uygulama parametrelerini güncelle
+  const updateApplicationParameters = async () => {
+    try {
+      showMessage('info', 'Uygulama parametreleri güncelleniyor...');
+      
+      const response = await fetch('http://localhost:5000/api/admin/update-application-parameters', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminPassword: adminPassword
+        })
       });
-    }
-  };
-
-  // Scroll event listener for active section detection
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['dashboard', 'users', 'system'];
-      const scrollPosition = window.scrollY + 100;
-
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const element = document.getElementById(sections[i]);
-        if (element && element.offsetTop <= scrollPosition) {
-          setActiveSection(sections[i]);
-          break;
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Parametreleri kategorilere göre grupla
-  const groupParameters = (params) => {
-    return params.reduce((groups, param) => {
-      let category = param.category || 'Genel';
       
-      // Özel kategoriler oluştur
-      if (param.param_key.includes('currency') || param.param_key.includes('money') || param.param_key.includes('default_currency')) {
-        category = 'Para Birimi';
-      } else if (param.param_key.includes('security') || param.param_key.includes('auth') || param.param_key.includes('password')) {
-        category = 'Güvenlik';
-      } else if (param.param_key.includes('income') || param.param_key.includes('expense') || param.param_key.includes('categories')) {
-        category = 'Gelir/Gider';
-      } else if (param.param_key.includes('bank') || param.param_key.includes('card') || param.param_key.includes('credit')) {
-        category = 'Banka/Kredi Kartı';
-      } else if (param.param_key.includes('notification') || param.param_key.includes('email') || param.param_key.includes('sms')) {
-        category = 'Bildirimler';
-      } else if (param.param_key.includes('app') || param.param_key.includes('system') || param.param_key.includes('name')) {
-        category = 'Uygulama';
-      } else if (param.param_key.includes('loan') || param.param_key.includes('debt')) {
-        category = 'Kredi/Borç';
-      } else if (param.param_key.includes('payment') || param.param_key.includes('auto')) {
-        category = 'Ödeme';
-      }
-      
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push(param);
-      return groups;
-    }, {});
-  };
-
-  // Parametre filtreleme effect'i
-  useEffect(() => {
-    let filtered = systemParameters;
-    
-    // Kategori filtreleme
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(param => param.category === selectedCategory);
-    }
-    
-    // Tip filtreleme
-    // if (selectedType !== 'all') {
-    //   filtered = filtered.filter(param => param.param_type === selectedType);
-    // }
-    
-    // Düzenlenebilir filtreleme
-    // if (selectedEditable !== 'all') {
-    //   filtered = filtered.filter(param => param.is_editable === (selectedEditable === 'true'));
-    // }
-    
-    // Arama terimi filtreleme
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(param => 
-        param.param_key.toLowerCase().includes(term) ||
-        param.description.toLowerCase().includes(term) ||
-        param.category.toLowerCase().includes(term) ||
-        param.param_type.toLowerCase().includes(term)
-      );
-    }
-    
-    setFilteredParameters(filtered);
-  }, [systemParameters, selectedCategory, searchTerm]);
-
-  // Click outside handler for mobile menu
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (mobileMenuOpen && !event.target.closest('.sidebar') && !event.target.closest('.mobile-menu-toggle')) {
-        setMobileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [mobileMenuOpen]);
-
-  // Parametre değerini render et
-  const renderParameterValue = (param) => {
-    if (param.param_type === 'boolean') {
-      return (
-        <Badge bg={param.param_value === 'true' ? 'success' : 'danger'}>
-          {param.param_value === 'true' ? 'Evet' : 'Hayır'}
-        </Badge>
-      );
-    } else if (param.param_type === 'number') {
-      return (
-        <Badge bg="info">
-          {Number(param.param_value).toLocaleString('tr-TR')}
-        </Badge>
-      );
-    } else if (param.param_type === 'json') {
-      try {
-        const parsed = JSON.parse(param.param_value);
-        if (Array.isArray(parsed)) {
-          return (
-            <div>
-              {parsed.map((item, index) => (
-                <Badge key={index} bg="secondary" className="me-1 mb-1">
-                  {typeof item === 'object' ? (item.name || item.bank_name || JSON.stringify(item)) : String(item)}
-                </Badge>
-              ))}
-            </div>
-          );
-        } else {
-          return (
-            <Badge bg="secondary">
-              {JSON.stringify(parsed)}
-            </Badge>
-          );
+      if (response.ok) {
+        const data = await response.json();
+        showMessage('success', data.message);
+        
+        // Özet bilgilerini göster
+        if (data.summary) {
+          console.log('📊 Güncelleme Özeti:', data.summary);
+          const summaryText = `
+            ✅ Yeni eklenen: ${data.summary.added}
+            🔄 Güncellenen: ${data.summary.updated}
+            📋 Toplam: ${data.summary.total}
+            📂 Kategoriler: ${data.summary.categories.map(c => `${c.name}(${c.count})`).join(', ')}
+          `;
+          showMessage('success', summaryText);
         }
-      } catch {
-        return (
-          <Badge bg="warning">
-            {param.param_value}
-          </Badge>
-        );
+        
+        fetchSystemParameters(); // Listeyi yenile
+        return true;
+      } else {
+        const error = await response.json();
+        showMessage('danger', error.message);
+        return false;
       }
-    } else {
-      return (
-        <Badge bg="secondary">
-          {String(param.param_value)}
-        </Badge>
-      );
+    } catch (error) {
+      console.error('Uygulama parametreleri güncelleme hatası:', error);
+      showMessage('danger', 'Uygulama parametreleri güncellenirken hata oluştu');
+      return false;
     }
   };
 
-  // Parametre tipini render et
-  const renderParameterType = (type) => {
-    const typeColors = {
-      'string': 'primary',
-      'number': 'info',
-      'boolean': 'success',
-      'json': 'warning',
-      'date': 'danger'
-    };
-    
-    return (
-      <Badge bg={typeColors[type] || 'secondary'}>
-        {type}
-      </Badge>
-    );
-  };
-
-
-
-  // Parametre değer input'unu render et
-  const renderParameterValueInput = (param, value, onChange, size = "lg") => {
-    if (param.param_type === 'boolean') {
-      return (
-        <Form.Select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          size={size}
-        >
-          <option value="true">Evet</option>
-          <option value="false">Hayır</option>
-        </Form.Select>
-      );
-    } else if (param.param_type === 'number') {
-      return (
-        <Form.Control
-          type="number"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          size={size}
-          step="any"
-        />
-      );
-    } else if (param.param_type === 'json') {
-      return (
-        <Form.Control
-          as="textarea"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          size={size}
-          rows={3}
-          placeholder='["değer1", "değer2"]'
-        />
-      );
-    } else {
-      return (
-        <Form.Control
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          size={size}
-        />
-      );
+  // System Configuration
+  const fetchSystemConfig = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/system-config', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminPassword: adminPassword
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSystemConfig(data.config);
+      }
+    } catch (error) {
+      console.error('Sistem konfigürasyonu getirme hatası:', error);
     }
   };
 
-  // Admin giriş formu
-  if (!isAuthenticated) {
-    return (
-      <Container className="mt-5">
-        <Row className="justify-content-center">
-          <Col md={6} lg={4}>
-            <Card className="shadow-lg border-0">
-              <Card.Header className="bg-danger text-white text-center py-3">
-                <h3 className="mb-0">🔐 Admin Girişi</h3>
-              </Card.Header>
-              <Card.Body className="p-4">
-                {message.text && (
-                  <Alert variant={message.type} dismissible onClose={() => setMessage({ type: '', text: '' })}>
-                    {message.text}
-                  </Alert>
-                )}
+  // ==================== EFFECTS ====================
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchDashboardData();
+      fetchUsers();
+      fetchBanks();
+      fetchSystemParameters();
+      fetchSystemConfig();
+    }
+  }, [isAuthenticated]);
 
-                <Form onSubmit={handleAdminLogin}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Admin Şifresi</Form.Label>
-                    <Form.Control
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="Admin şifresini giriniz"
-                      required
-                      size="lg"
-                    />
-                  </Form.Group>
-
-                  <div className="d-grid gap-2">
-                    <Button
-                      type="submit"
-                      variant="danger"
-                      size="lg"
-                      disabled={loading}
-                      className="py-2"
-                    >
-                      {loading ? (
-                        <>
-                          <Spinner animation="border" size="sm" className="me-2" />
-                          Giriş yapılıyor...
-                        </>
-                      ) : (
-                        '🚀 Admin Girişi'
-                      )}
-                    </Button>
-                  </div>
-                </Form>
-
-                <div className="text-center mt-3">
-                  <p className="text-muted mb-0">
-                    <small>
-                      ⚠️ <strong>Uyarı:</strong> Bu panel sadece sistem yöneticileri içindir.
-                    </small>
-                  </p>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    );
-  }
-
-  // Admin panel ana içeriği
-  return (
-    <div className="admin-panel d-flex">
-      {/* Sol Sidebar - Dikey Navbar */}
-      <div className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'show' : ''}`}>
-        <div className="sidebar-header">
-          <div className="d-flex align-items-center justify-content-between">
-            <h5 className="mb-0 text-white">
-              {!sidebarCollapsed && '🛡️ Admin Panel'}
-            </h5>
-            <Button
-              variant="link"
-              className="text-white p-0"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+  // ==================== RENDER FUNCTIONS ====================
+  
+  // Login Form
+  const renderLoginForm = () => (
+    <div className="admin-login-container">
+      <Card className="admin-login-card">
+        <Card.Header className="text-center">
+          <FaCrown className="admin-icon" />
+          <h3>🔐 Admin Paneli</h3>
+          <p className="text-muted">Sistem yönetimi için giriş yapın</p>
+        </Card.Header>
+        <Card.Body>
+          <Form onSubmit={handleAdminLogin}>
+            <Form.Group className="mb-3">
+              <Form.Label>
+                <FaKey className="me-2" />
+                Admin Şifresi
+              </Form.Label>
+              <Form.Control
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Admin şifresini girin"
+                required
+              />
+            </Form.Group>
+            <Button 
+              type="submit" 
+              variant="primary" 
+              className="w-100"
+              disabled={loading}
             >
-              {sidebarCollapsed ? <FaBars /> : <FaTimes />}
-            </Button>
-          </div>
-        </div>
-        
-        <Nav className="flex-column sidebar-nav">
-          <Nav.Link 
-            onClick={() => scrollToSection('dashboard')}
-            className={`sidebar-link ${activeSection === 'dashboard' ? 'active' : ''}`}
-          >
-            <FaChartBar className="me-2" />
-            {!sidebarCollapsed && 'Dashboard'}
-          </Nav.Link>
-          <Nav.Link 
-            onClick={() => scrollToSection('users')}
-            className={`sidebar-link ${activeSection === 'users' ? 'active' : ''}`}
-          >
-            <FaUsers className="me-2" />
-            {!sidebarCollapsed && 'Kullanıcılar'}
-          </Nav.Link>
-          <Nav.Link 
-            onClick={() => scrollToSection('system')}
-            className={`sidebar-link ${activeSection === 'system' ? 'active' : ''}`}
-          >
-            <FaCog className="me-2" />
-            {!sidebarCollapsed && 'Sistem Parametreleri'}
-          </Nav.Link>
-        </Nav>
-        
-        <div className="sidebar-footer">
-          <Button 
-            variant="outline-light" 
-            size="sm" 
-            className="w-100"
-            onClick={handleLogout}
-          >
-            🚪 Çıkış
-          </Button>
-        </div>
-      </div>
-
-      {/* Ana İçerik Alanı */}
-      <div className="main-content">
-        {/* Mobile Menu Toggle */}
-        <div className="d-md-none position-fixed top-0 start-0 p-3 mobile-menu-toggle" style={{ zIndex: 1001 }}>
-          <Button
-            variant="dark"
-            size="sm"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-circle"
-            style={{ width: '45px', height: '45px' }}
-          >
-            <FaBars />
-          </Button>
-        </div>
-        
-        <Container fluid>
-          {message.text && (
-            <Alert variant={message.type} dismissible onClose={() => setMessage({ type: '', text: '' })}>
-              {message.text}
-            </Alert>
-          )}
-
-          {loading && (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="primary" size="lg" />
-              <p className="mt-3 text-muted">Yükleniyor...</p>
-            </div>
-          )}
-
-          {/* Breadcrumb Navigation */}
-          <nav aria-label="breadcrumb" className="mb-4">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item">
-                <button 
-                  type="button"
-                  onClick={() => scrollToSection('dashboard')} 
-                  className="btn btn-link text-decoration-none p-0 border-0"
-                  style={{ color: 'inherit' }}
-                >
-                  🏠 Ana Sayfa
-                </button>
-              </li>
-              {activeSection !== 'dashboard' && (
-                <li className="breadcrumb-item active" aria-current="page">
-                  {activeSection === 'users' && '👥 Kullanıcı Yönetimi'}
-                  {activeSection === 'system' && '⚙️ Sistem Parametreleri'}
-                </li>
+              {loading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Giriş yapılıyor...
+                </>
+              ) : (
+                <>
+                  <FaSignInAlt className="me-2" />
+                  Giriş Yap
+                </>
               )}
-            </ol>
-          </nav>
+            </Button>
+          </Form>
+        </Card.Body>
+        <Card.Footer className="text-center text-muted">
+          <small>
+            <FaShieldAlt className="me-1" />
+            Güvenli admin erişimi
+          </small>
+        </Card.Footer>
+      </Card>
+    </div>
+  );
 
-          {/* Dashboard İstatistikleri */}
-          <Row className="mb-4" id="dashboard">
-            <Col>
-              <div className="d-flex justify-content-between align-items-center mb-3">
+  // Main Admin Panel
+  const renderAdminPanel = () => (
+    <div className={`admin-panel ${darkMode ? 'dark-mode' : ''} ${fullscreen ? 'fullscreen' : ''}`}>
+      {/* Top Navigation */}
+      <Navbar bg="dark" variant="dark" expand="lg" className="admin-navbar">
+        <Container fluid>
+          <Navbar.Brand>
+            <FaCrown className="me-2" />
+            Admin Panel
+          </Navbar.Brand>
+          
+          <Navbar.Toggle 
+            aria-controls="admin-navbar-nav"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          />
+          
+          <Navbar.Collapse id="admin-navbar-nav">
+            <Nav className="me-auto">
+              <Nav.Link 
+                active={activeSection === 'dashboard'}
+                onClick={() => setActiveSection('dashboard')}
+              >
+                <FaChartBar className="me-1" />
+                Dashboard
+              </Nav.Link>
+              <Nav.Link 
+                active={activeSection === 'users'}
+                onClick={() => setActiveSection('users')}
+              >
+                <FaUsers className="me-1" />
+                Kullanıcılar
+              </Nav.Link>
+              <Nav.Link 
+                active={activeSection === 'banks'}
+                onClick={() => setActiveSection('banks')}
+              >
+                <FaDatabase className="me-1" />
+                Bankalar
+              </Nav.Link>
+              <Nav.Link 
+                active={activeSection === 'system'}
+                onClick={() => setActiveSection('system')}
+              >
+                <FaCog className="me-1" />
+                Sistem
+              </Nav.Link>
+            </Nav>
+            
+            <Nav>
+              <Nav.Link onClick={() => setDarkMode(!darkMode)}>
+                {darkMode ? <FaSun /> : <FaMoon />}
+              </Nav.Link>
+              <Nav.Link onClick={() => setFullscreen(!fullscreen)}>
+                {fullscreen ? <FaCompress /> : <FaExpand />}
+              </Nav.Link>
+              <Dropdown>
+                <Dropdown.Toggle variant="outline-light" id="admin-dropdown">
+                  <FaUserCog />
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => setShowSettingsModal(true)}>
+                    <FaCog className="me-2" />
+                    Ayarlar
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => setIsAuthenticated(false)}>
+                    <FaSignOutAlt className="me-2" />
+                    Çıkış
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+
+      {/* Main Content */}
+      <Container fluid className="admin-content">
+        {message.text && (
+          <Alert 
+            variant={message.type} 
+            dismissible 
+            onClose={() => setMessage({ type: '', text: '' })}
+            className="admin-alert"
+          >
+            {message.text}
+          </Alert>
+        )}
+
+        {/* Dashboard Section */}
+        {activeSection === 'dashboard' && renderDashboard()}
+        
+        {/* Users Section */}
+        {activeSection === 'users' && renderUsersManagement()}
+        
+        {/* Banks Section */}
+        {activeSection === 'banks' && renderBanksManagement()}
+        
+        {/* System Section */}
+        {activeSection === 'system' && renderSystemManagement()}
+      </Container>
+    </div>
+  );
+
+  // ==================== RENDER FUNCTIONS ====================
+  
+  // Dashboard Section
+  const renderDashboard = () => (
+    <div className="dashboard-section">
+      <Row className="mb-4">
+        <Col>
+          <h2><FaChartBar className="me-2" />Dashboard</h2>
+          <p className="text-muted">Sistem genel durumu ve istatistikler</p>
+        </Col>
+      </Row>
+
+      {/* Stats Cards */}
+      <Row className="mb-4">
+        <Col md={3} className="mb-3">
+          <Card className="stat-card">
+            <Card.Body>
+              <div className="d-flex justify-content-between">
                 <div>
-                  <h2 className="mb-1">📊 Dashboard İstatistikleri</h2>
-                  <p className="text-muted mb-0">Hoş geldiniz! Sistem genel durumu aşağıda görüntülenmektedir.</p>
+                  <h6 className="text-muted">Toplam Kullanıcı</h6>
+                  <h3>{dashboardData.stats.totalUsers}</h3>
                 </div>
-                <div className="text-end">
-                  <small className="text-muted d-block">Son Güncelleme</small>
-                  <span className="badge bg-info">
-                    {new Date().toLocaleString('tr-TR')}
-                  </span>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="ms-2"
-                    onClick={() => {
-                      fetchDashboardData();
-                      fetchUsers();
-                      fetchSystemParams();
-                      fetchBanks();
-                    }}
-                    title="Tüm verileri yenile"
-                  >
-                    🔄 Yenile
+                <div className="stat-icon">
+                  <FaUsers className="text-primary" />
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3} className="mb-3">
+          <Card className="stat-card">
+            <Card.Body>
+              <div className="d-flex justify-content-between">
+                <div>
+                  <h6 className="text-muted">Toplam Hesap</h6>
+                  <h3>{dashboardData.stats.totalAccounts}</h3>
+                </div>
+                <div className="stat-icon">
+                  <FaDatabase className="text-success" />
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3} className="mb-3">
+          <Card className="stat-card">
+            <Card.Body>
+              <div className="d-flex justify-content-between">
+                <div>
+                  <h6 className="text-muted">Toplam Gelir</h6>
+                  <h3>{formatCurrency(dashboardData.stats.totalIncomes)}</h3>
+                </div>
+                <div className="stat-icon">
+                  <FaArrowUp className="text-success" />
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3} className="mb-3">
+          <Card className="stat-card">
+            <Card.Body>
+              <div className="d-flex justify-content-between">
+                <div>
+                  <h6 className="text-muted">Toplam Gider</h6>
+                  <h3>{formatCurrency(dashboardData.stats.totalExpenses)}</h3>
+                </div>
+                <div className="stat-icon">
+                  <FaArrowDown className="text-danger" />
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* System Performance */}
+      <Row className="mb-4">
+        <Col md={6}>
+          <Card>
+            <Card.Header>
+              <h6><FaServer className="me-2" />Sistem Performansı</h6>
+            </Card.Header>
+            <Card.Body>
+              <div className="mb-3">
+                <div className="d-flex justify-content-between mb-1">
+                  <small>CPU Kullanımı</small>
+                  <small>{dashboardData.stats.cpuUsage}%</small>
+                </div>
+                <ProgressBar 
+                  now={dashboardData.stats.cpuUsage} 
+                  variant={dashboardData.stats.cpuUsage > 80 ? 'danger' : 'info'}
+                />
+              </div>
+              <div className="mb-3">
+                <div className="d-flex justify-content-between mb-1">
+                  <small>Bellek Kullanımı</small>
+                  <small>{dashboardData.stats.memoryUsage}%</small>
+                </div>
+                <ProgressBar 
+                  now={dashboardData.stats.memoryUsage} 
+                  variant={dashboardData.stats.memoryUsage > 85 ? 'danger' : 'warning'}
+                />
+              </div>
+              <div className="mb-3">
+                <div className="d-flex justify-content-between mb-1">
+                  <small>Disk Kullanımı</small>
+                  <small>{dashboardData.stats.diskUsage}%</small>
+                </div>
+                <ProgressBar 
+                  now={dashboardData.stats.diskUsage} 
+                  variant={dashboardData.stats.diskUsage > 90 ? 'danger' : 'success'}
+                />
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={6}>
+          <Card>
+            <Card.Header>
+              <h6><FaClock className="me-2" />Sistem Durumu</h6>
+            </Card.Header>
+            <Card.Body>
+              <div className="mb-3">
+                <strong>Çalışma Süresi:</strong> {formatUptime(dashboardData.stats.systemUptime)}
+              </div>
+              <div className="mb-3">
+                <strong>Aktif Oturumlar:</strong> {dashboardData.stats.activeSessions}
+              </div>
+              <div className="mb-3">
+                <strong>Hata Oranı:</strong> {dashboardData.stats.errorRate}%
+              </div>
+              <div className="mb-3">
+                <strong>Yanıt Süresi:</strong> {dashboardData.stats.responseTime}ms
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Recent Activities */}
+      <Row>
+        <Col md={8}>
+          <Card>
+            <Card.Header>
+              <h6><FaHistory className="me-2" />Son Aktiviteler</h6>
+            </Card.Header>
+            <Card.Body>
+              <ListGroup variant="flush">
+                {dashboardData.recentActivities.length > 0 ? (
+                  dashboardData.recentActivities.map((activity, index) => (
+                    <ListGroupItem key={index} className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <FaUserClock className="me-2 text-muted" />
+                        {activity.description}
+                      </div>
+                      <small className="text-muted">{formatDate(activity.timestamp)}</small>
+                    </ListGroupItem>
+                  ))
+                ) : (
+                  <ListGroupItem className="text-center text-muted">
+                    Henüz aktivite bulunmuyor
+                  </ListGroupItem>
+                )}
+              </ListGroup>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card>
+            <Card.Header>
+              <h6><FaBell className="me-2" />Sistem Uyarıları</h6>
+            </Card.Header>
+            <Card.Body>
+              <ListGroup variant="flush">
+                {dashboardData.systemAlerts.length > 0 ? (
+                  dashboardData.systemAlerts.map((alert, index) => (
+                    <ListGroupItem key={index} className={`d-flex justify-content-between align-items-center ${alert.level === 'error' ? 'text-danger' : alert.level === 'warning' ? 'text-warning' : 'text-info'}`}>
+                      <div>
+                        <FaExclamationTriangle className="me-2" />
+                        {alert.message}
+                      </div>
+                      <small>{formatDate(alert.timestamp)}</small>
+                    </ListGroupItem>
+                  ))
+                ) : (
+                  <ListGroupItem className="text-center text-success">
+                    <FaCheckCircle className="me-2" />
+                    Sistem normal çalışıyor
+                  </ListGroupItem>
+                )}
+              </ListGroup>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  // Users Management Section
+  const renderUsersManagement = () => (
+    <div className="users-section">
+      <Row className="mb-4">
+        <Col>
+          <h2><FaUsers className="me-2" />Kullanıcı Yönetimi</h2>
+          <p className="text-muted">Sistem kullanıcılarını yönetin</p>
+        </Col>
+      </Row>
+
+      {/* Search and Filters */}
+      <Row className="mb-4">
+        <Col md={6}>
+          <InputGroup>
+            <InputGroup.Text><FaSearch /></InputGroup.Text>
+            <FormControl
+              placeholder="Kullanıcı ara..."
+              value={userSearchTerm}
+              onChange={(e) => setUserSearchTerm(e.target.value)}
+            />
+          </InputGroup>
+        </Col>
+        <Col md={3}>
+          <Form.Select
+            value={userFilterStatus}
+            onChange={(e) => setUserFilterStatus(e.target.value)}
+          >
+            <option value="all">Tüm Kullanıcılar</option>
+            <option value="active">Aktif</option>
+            <option value="inactive">Pasif</option>
+          </Form.Select>
+        </Col>
+        <Col md={3}>
+          <Button variant="primary" onClick={() => setShowUserModal(true)}>
+            <FaPlus className="me-2" />
+            Yeni Kullanıcı
+          </Button>
+        </Col>
+      </Row>
+
+      {/* Users Table */}
+      <Card>
+        <Card.Body>
+          <Table responsive striped hover>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Kullanıcı Adı</th>
+                <th>E-posta</th>
+                <th>Ad Soyad</th>
+                <th>Durum</th>
+                <th>Son Giriş</th>
+                <th>Kayıt Tarihi</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map(user => (
+                <tr key={user.id}>
+                  <td>{user.id}</td>
+                  <td>{user.username}</td>
+                  <td>{user.email}</td>
+                  <td>{user.full_name}</td>
+                  <td>
+                    <Badge bg={user.is_active ? 'success' : 'danger'}>
+                      {user.is_active ? 'Aktif' : 'Pasif'}
+                    </Badge>
+                  </td>
+                  <td>{user.last_login ? formatDate(user.last_login) : 'Hiç giriş yapmamış'}</td>
+                  <td>{formatDate(user.created_at)}</td>
+                  <td>
+                    <ButtonGroup size="sm">
+                      <Button variant="outline-primary" size="sm">
+                        <FaEye />
+                      </Button>
+                      <Button variant="outline-warning" size="sm">
+                        <FaEdit />
+                      </Button>
+                      <Button variant="outline-danger" size="sm">
+                        <FaBan />
+                      </Button>
+                    </ButtonGroup>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+
+  // Banks Management Section
+  const renderBanksManagement = () => (
+    <div className="banks-section">
+      <Row className="mb-4">
+        <Col>
+          <h2><FaDatabase className="me-2" />Banka Yönetimi</h2>
+          <p className="text-muted">Sistem bankalarını yönetin</p>
+        </Col>
+      </Row>
+
+      {/* Add New Bank */}
+      <Row className="mb-4">
+        <Col md={6}>
+          <InputGroup>
+            <FormControl
+              placeholder="Yeni banka adı..."
+              value={newBankName}
+              onChange={(e) => setNewBankName(e.target.value)}
+            />
+            <Button variant="success" onClick={() => {
+              // Add bank logic
+              showMessage('success', 'Banka eklendi!');
+              setNewBankName('');
+            }}>
+              <FaPlus className="me-2" />
+              Ekle
+            </Button>
+          </InputGroup>
+        </Col>
+      </Row>
+
+      {/* Banks Table */}
+      <Card>
+        <Card.Body>
+          <Table responsive striped hover>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Banka Adı</th>
+                <th>Oluşturulma Tarihi</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBanks.map(bank => (
+                <tr key={bank.id}>
+                  <td>{bank.id}</td>
+                  <td>{bank.bank_name}</td>
+                  <td>{formatDate(bank.created_at)}</td>
+                  <td>
+                    <ButtonGroup size="sm">
+                      <Button variant="outline-warning" size="sm">
+                        <FaEdit />
+                      </Button>
+                      <Button variant="outline-danger" size="sm">
+                        <FaTrash />
+                      </Button>
+                    </ButtonGroup>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+
+  // System Management Section
+  const renderSystemManagement = () => (
+    <div className="system-section">
+      <Row className="mb-4">
+        <Col>
+          <h2><FaCog className="me-2" />Sistem Yönetimi</h2>
+          <p className="text-muted">Sistem parametrelerini ve konfigürasyonu yönetin</p>
+        </Col>
+      </Row>
+
+      <Tabs defaultActiveKey="parameters" className="mb-4">
+        <Tab eventKey="parameters" title="Sistem Parametreleri">
+          <Card>
+            <Card.Header>
+              <div className="d-flex justify-content-between align-items-center">
+                <h6><FaCog className="me-2" />Sistem Parametreleri</h6>
+                <div>
+                  <Button variant="outline-primary" size="sm" className="me-2" onClick={exportSystemParameters}>
+                    <FaDownload className="me-2" />
+                    Dışa Aktar
+                  </Button>
+                  <Button variant="outline-success" size="sm" className="me-2" onClick={() => document.getElementById('importFile').click()}>
+                    <FaUpload className="me-2" />
+                    İçe Aktar
+                  </Button>
+                  <Button variant="outline-warning" size="sm" className="me-2" onClick={updateApplicationParameters}>
+                    <FaSync className="me-2" />
+                    Uygulama Parametrelerini Güncelle
+                  </Button>
+                  <Button variant="primary" size="sm" onClick={() => setShowAddParameterModal(true)}>
+                    <FaPlus className="me-2" />
+                    Yeni Parametre
                   </Button>
                 </div>
               </div>
-            </Col>
-          </Row>
-
-          {dashboardData && (
-            <Row className="g-3 mb-4">
-              <Col md={3}>
-                <Card className="text-center border-0 shadow-sm h-100">
-                  <Card.Body className="p-3">
-                    <div className="text-primary mb-2">
-                      <FaUsers size={24} />
-                    </div>
-                    <h4 className="mb-1">{dashboardData.stats.totalUsers}</h4>
-                    <small className="text-muted">Toplam Kullanıcı</small>
-                    <div className="mt-2">
-                      <Badge bg="success">{dashboardData.stats.activeUsers} Aktif</Badge>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-
-              <Col md={3}>
-                <Card className="text-center border-0 shadow-sm h-100">
-                  <Card.Body className="p-3">
-                    <div className="text-success mb-2">
-                      <FaChartBar size={24} />
-                    </div>
-                    <h4 className="mb-1">{dashboardData.stats.totalAccounts}</h4>
-                    <small className="text-muted">Toplam Hesap</small>
-                    <div className="mt-2">
-                      <Badge bg="info">{dashboardData.stats.totalCreditCards} Kredi Kartı</Badge>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-
-              <Col md={3}>
-                <Card className="text-center border-0 shadow-sm h-100">
-                  <Card.Body className="p-3">
-                    <div className="text-warning mb-2">
-                      <FaPlus size={24} />
-                    </div>
-                    <h4 className="mb-1">{dashboardData.stats.totalIncomes}</h4>
-                    <small className="text-muted">Toplam Gelir</small>
-                    <div className="mt-2">
-                      <Badge bg="success">{dashboardData.stats.recentUsers} Yeni (7 gün)</Badge>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-
-              <Col md={3}>
-                <Card className="text-center border-0 shadow-sm h-100">
-                  <Card.Body className="p-3">
-                    <div className="text-danger mb-2">
-                      <FaTrash size={24} />
-                    </div>
-                    <h4 className="mb-1">{dashboardData.stats.totalExpenses}</h4>
-                    <small className="text-muted">Toplam Gider</small>
-                    <div className="mt-2">
-                      <Badge bg="warning">{dashboardData.stats.totalRentExpenses} Kira</Badge>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          )}
-
-          {/* Son Giriş Yapan Kullanıcılar */}
-          {dashboardData?.lastLoginUsers && (
-            <Row className="mb-4">
-              <Col>
-                <Card className="border-0 shadow-sm">
-                  <Card.Header className="bg-light">
-                    <h5 className="mb-0">🕐 Son Giriş Yapan Kullanıcılar</h5>
-                  </Card.Header>
-                  <Card.Body>
-                    <Table responsive>
-                      <thead>
-                        <tr>
-                          <th>Kullanıcı Adı</th>
-                          <th>Ad Soyad</th>
-                          <th>Son Giriş</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardData.lastLoginUsers.map((user, index) => (
-                          <tr key={index}>
-                            <td>
-                              <Badge bg="primary">{user.username}</Badge>
-                            </td>
-                            <td>{user.full_name}</td>
-                            <td>
-                              <small className="text-muted">
-                                {new Date(user.last_login).toLocaleString('tr-TR')}
-                              </small>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          )}
-
-          {/* Kullanıcı Yönetimi */}
-          <Row className="mb-4" id="users">
-            <Col>
-              <Card className="border-0 shadow-sm">
-                <Card.Header className="bg-light d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">👥 Kullanıcı Yönetimi</h5>
-                  <Button variant="outline-primary" size="sm" onClick={() => fetchUsers()}>
-                    🔄 Yenile
+            </Card.Header>
+            <Card.Body>
+              {/* Arama ve Filtreleme */}
+              <div className="row mb-3">
+                <div className="col-md-4">
+                  <InputGroup size="sm">
+                    <InputGroup.Text><FaSearch /></InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Parametre ara..."
+                      value={parameterSearchTerm}
+                      onChange={(e) => setParameterSearchTerm(e.target.value)}
+                    />
+                  </InputGroup>
+                </div>
+                <div className="col-md-3">
+                  <Form.Select size="sm" value={parameterFilterCategory} onChange={(e) => setParameterFilterCategory(e.target.value)}>
+                    <option value="">Tüm Kategoriler</option>
+                    <option value="general">Genel</option>
+                    <option value="financial">Finansal</option>
+                    <option value="security">Güvenlik</option>
+                    <option value="email">E-posta</option>
+                    <option value="ui">Kullanıcı Arayüzü</option>
+                    <option value="database">Veritabanı</option>
+                    <option value="monitoring">İzleme</option>
+                    <option value="backup">Yedekleme</option>
+                    <option value="notification">Bildirim</option>
+                    <option value="datetime">Tarih/Zaman</option>
+                  </Form.Select>
+                </div>
+                <div className="col-md-3">
+                  <Form.Select size="sm" value={parameterFilterType} onChange={(e) => setParameterFilterType(e.target.value)}>
+                    <option value="">Tüm Tipler</option>
+                    <option value="string">Metin</option>
+                    <option value="number">Sayı</option>
+                    <option value="boolean">Mantıksal</option>
+                    <option value="json">JSON</option>
+                    <option value="date">Tarih</option>
+                  </Form.Select>
+                </div>
+                <div className="col-md-2">
+                  <Button variant="outline-secondary" size="sm" onClick={() => {
+                    setParameterSearchTerm('');
+                    setParameterFilterCategory('');
+                    setParameterFilterType('');
+                  }}>
+                    <FaTimes className="me-1" />
+                    Temizle
                   </Button>
-                </Card.Header>
-                <Card.Body>
-                  <Table responsive hover>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Kullanıcı Adı</th>
-                        <th>E-posta</th>
-                        <th>Ad Soyad</th>
-                        <th>Durum</th>
-                        <th>Son Giriş</th>
-                        <th>Kayıt Tarihi</th>
-                        <th>İşlemler</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id}>
-                          <td>{user.id}</td>
-                          <td>
-                            <Badge bg="secondary">{user.username}</Badge>
-                          </td>
-                          <td>{user.email}</td>
-                          <td>{user.full_name}</td>
-                          <td>
-                            {user.is_active ? (
-                              <Badge bg="success">Aktif</Badge>
-                            ) : (
-                              <Badge bg="danger">Pasif</Badge>
-                            )}
-                          </td>
-                          <td>
-                            {user.last_login ? (
-                              <small className="text-muted">
-                                {new Date(user.last_login).toLocaleString('tr-TR')}
-                              </small>
-                            ) : (
-                              <span className="text-muted">Hiç giriş yapmamış</span>
-                            )}
-                          </td>
-                          <td>
-                            <small className="text-muted">
-                              {new Date(user.created_at).toLocaleDateString('tr-TR')}
-                            </small>
-                          </td>
-                          <td>
-                            <Button
-                              variant={user.is_active ? "warning" : "success"}
-                              size="sm"
-                              onClick={() => toggleUserStatus(user.id)}
-                              className="me-1"
-                            >
-                              {user.is_active ? <FaBan /> : <FaCheck />}
-                            </Button>
-                            <Button
-                              variant="info"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowUserModal(true);
-                              }}
-                            >
-                              <FaEye />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                </div>
+              </div>
 
-          {/* Sistem Parametreleri - Akordiyon Yapısı */}
-          <Row className="mb-4" id="system">
-            <Col>
-              <h2 className="mb-3">⚙️ Sistem Parametreleri</h2>
-              
-              <Accordion className="shadow-sm">
-                {/* Sunucu Bilgileri */}
-                <Accordion.Item eventKey="0">
-                  <Accordion.Header>
-                    <FaServer className="me-2 text-primary" />
-                    <strong>🖥️ Sunucu Bilgileri</strong>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {systemParams ? (
-                      <Row>
-                        <Col md={6}>
-                          <Table size="sm">
-                            <tbody>
-                              <tr>
-                                <td><strong>Node.js Versiyonu:</strong></td>
-                                <td>{systemParams.serverInfo.version}</td>
-                              </tr>
-                              <tr>
-                                <td><strong>Platform:</strong></td>
-                                <td>{systemParams.serverInfo.platform}</td>
-                              </tr>
-                              <tr>
-                                <td><strong>Çalışma Süresi:</strong></td>
-                                <td>{Math.floor(systemParams.serverInfo.uptime / 3600)} saat</td>
-                              </tr>
-                              <tr>
-                                <td><strong>Aktif Bağlantılar:</strong></td>
-                                <td>{systemParams.activeConnections}</td>
-                              </tr>
-                            </tbody>
-                          </Table>
-                        </Col>
-                        <Col md={6}>
-                          <h6>💾 Bellek Kullanımı</h6>
-                          <div className="mb-2">
-                            <small>RSS: {(systemParams.serverInfo.memoryUsage.rss / 1024 / 1024).toFixed(2)} MB</small>
-                            <ProgressBar 
-                              now={(systemParams.serverInfo.memoryUsage.rss / 1024 / 1024 / 100) * 100} 
-                              className="mt-1"
-                            />
-                          </div>
-                          <div className="mb-2">
-                            <small>Heap Used: {(systemParams.serverInfo.memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB</small>
-                            <ProgressBar 
-                              now={(systemParams.serverInfo.memoryUsage.heapUsed / 1024 / 1024 / 100) * 100} 
-                              className="mt-1"
-                              variant="warning"
-                            />
-                          </div>
-                        </Col>
-                      </Row>
-                    ) : (
-                      <div className="text-center">
-                        <Spinner animation="border" />
-                        <p className="mt-2">Sistem parametreleri yükleniyor...</p>
-                      </div>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-
-
-
-                {/* Sistem Konfigürasyonu */}
-                <Accordion.Item eventKey="2">
-                  <Accordion.Header>
-                    <FaCog className="me-2 text-warning" />
-                    <strong>⚙️ Sistem Konfigürasyonu</strong>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {systemParams?.systemConfig ? (
-                      <div>
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <h6>🔧 Düzenlenebilir Sistem Parametreleri</h6>
-                          <div>
-                            {!editingSystemParams ? (
-                              <Button 
-                                variant="primary" 
-                                size="sm"
-                                onClick={() => setEditingSystemParams(true)}
-                              >
-                                ✏️ Düzenle
-                              </Button>
-                            ) : (
-                              <div>
-                                <Button 
-                                  variant="success" 
-                                  size="sm" 
-                                  className="me-2"
-                                  onClick={updateSystemParams}
-                                >
-                                  💾 Kaydet
-                                </Button>
-                                <Button 
-                                  variant="secondary" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingSystemParams(false);
-                                    fetchSystemParams(); // Orijinal değerleri geri yükle
-                                  }}
-                                >
-                                  ❌ İptal
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Veritabanı Konfigürasyonu */}
-                        <Card className="mb-3">
-                          <Card.Header className="bg-info text-white">
-                            <h6 className="mb-0">🗄️ Veritabanı Ayarları</h6>
-                          </Card.Header>
-                          <Card.Body>
-                            <Row>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Host</Form.Label>
-                                  <Form.Control
-                                    type="text"
-                                    value={systemConfigForm.database?.host || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      database: { ...systemConfigForm.database, host: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Port</Form.Label>
-                                  <Form.Control
-                                    type="number"
-                                    value={systemConfigForm.database?.port || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      database: { ...systemConfigForm.database, port: parseInt(e.target.value) }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                            <Row>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Kullanıcı Adı</Form.Label>
-                                  <Form.Control
-                                    type="text"
-                                    value={systemConfigForm.database?.user || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      database: { ...systemConfigForm.database, user: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Şifre</Form.Label>
-                                  <Form.Control
-                                    type="password"
-                                    value={systemConfigForm.database?.password || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      database: { ...systemConfigForm.database, password: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                            <Row>
-                              <Col md={12}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Veritabanı Adı</Form.Label>
-                                  <Form.Control
-                                    type="text"
-                                    value={systemConfigForm.database?.database || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      database: { ...systemConfigForm.database, database: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                          </Card.Body>
-                        </Card>
-
-                        {/* Uygulama Konfigürasyonu */}
-                        <Card className="mb-3">
-                          <Card.Header className="bg-success text-white">
-                            <h6 className="mb-0">🚀 Uygulama Ayarları</h6>
-                          </Card.Header>
-                          <Card.Body>
-                            <Row>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Port</Form.Label>
-                                  <Form.Control
-                                    type="number"
-                                    value={systemConfigForm.application?.port || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      application: { ...systemConfigForm.application, port: parseInt(e.target.value) }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Admin Şifresi</Form.Label>
-                                  <Form.Control
-                                    type="password"
-                                    value={systemConfigForm.application?.adminPassword || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      application: { ...systemConfigForm.application, adminPassword: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                            <Row>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Oturum Süresi (saniye)</Form.Label>
-                                  <Form.Control
-                                    type="number"
-                                    value={systemConfigForm.application?.sessionTimeout || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      application: { ...systemConfigForm.application, sessionTimeout: parseInt(e.target.value) }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Maksimum Giriş Denemesi</Form.Label>
-                                  <Form.Control
-                                    type="number"
-                                    value={systemConfigForm.application?.maxLoginAttempts || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      application: { ...systemConfigForm.application, maxLoginAttempts: parseInt(e.target.value) }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                            <Row>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>Minimum Şifre Uzunluğu</Form.Label>
-                                  <Form.Control
-                                    type="number"
-                                    value={systemConfigForm.application?.passwordMinLength || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      application: { ...systemConfigForm.application, passwordMinLength: parseInt(e.target.value) }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                          </Card.Body>
-                        </Card>
-
-                        {/* Güvenlik Konfigürasyonu */}
-                        <Card className="mb-3">
-                          <Card.Header className="bg-warning text-dark">
-                            <h6 className="mb-0">🔒 Güvenlik Ayarları</h6>
-                          </Card.Header>
-                          <Card.Body>
-                            <Row>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>BCrypt Rounds</Form.Label>
-                                  <Form.Control
-                                    type="number"
-                                    value={systemConfigForm.security?.bcryptRounds || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      security: { ...systemConfigForm.security, bcryptRounds: parseInt(e.target.value) }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                  />
-                                </Form.Group>
-                              </Col>
-                              <Col md={6}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>JWT Geçerlilik Süresi</Form.Label>
-                                  <Form.Control
-                                    type="text"
-                                    value={systemConfigForm.security?.jwtExpiresIn || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      security: { ...systemConfigForm.security, jwtExpiresIn: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                    placeholder="24h, 7d, 30d"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                            <Row>
-                              <Col md={12}>
-                                <Form.Group className="mb-2">
-                                  <Form.Label>CORS Origin</Form.Label>
-                                  <Form.Control
-                                    type="text"
-                                    value={systemConfigForm.security?.corsOrigin || ''}
-                                    onChange={(e) => setSystemConfigForm({
-                                      ...systemConfigForm,
-                                      security: { ...systemConfigForm.security, corsOrigin: e.target.value }
-                                    })}
-                                    disabled={!editingSystemParams}
-                                    size="sm"
-                                    placeholder="* veya http://localhost:3000"
-                                  />
-                                </Form.Group>
-                              </Col>
-                            </Row>
-                          </Card.Body>
-                        </Card>
-
-                        {/* Sıfırlama Butonu */}
-                        <div className="text-center">
-                          <Button 
-                            variant="outline-danger" 
-                            size="sm"
-                            onClick={resetSystemParams}
-                            disabled={editingSystemParams}
-                          >
-                            🔄 Varsayılan Değerlere Sıfırla
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <Spinner animation="border" />
-                        <p className="mt-2">Sistem konfigürasyonu yükleniyor...</p>
-                      </div>
-                    )}
-                  </Accordion.Body>
-                </Accordion.Item>
-
-                {/* Veritabanı İşlemleri */}
-                <Accordion.Item eventKey="3">
-                  <Accordion.Header>
-                    <FaHdd className="me-2 text-info" />
-                    <strong>🗄️ Veritabanı İşlemleri</strong>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    <Row>
-                      <Col md={6}>
-                        <Card className="border-warning">
-                          <Card.Body className="text-center">
-                            <FaExclamationTriangle className="text-warning mb-2" size={32} />
-                            <h6>Veritabanını Sıfırla</h6>
-                            <p className="text-muted small">
-                              Tüm verileri kalıcı olarak siler. Bu işlem geri alınamaz!
-                            </p>
-                            <Button 
-                              variant="warning" 
-                              onClick={() => setShowResetModal(true)}
-                            >
-                              🗑️ Veritabanını Sıfırla
-                            </Button>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      <Col md={6}>
-                        <Card className="border-success">
-                          <Card.Body className="text-center">
-                            <FaPlus className="text-success mb-2" size={32} />
-                            <h6>Test Verileri Ekle</h6>
-                            <p className="text-muted small">
-                              3 test kullanıcısı ve örnek veriler ekler
-                            </p>
-                            <Button 
-                              variant="success" 
-                              onClick={() => setShowMockDataModal(true)}
-                            >
-                              📊 Test Verileri Ekle
-                            </Button>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                  </Accordion.Body>
-                </Accordion.Item>
-
-                {/* Sistem Parametreleri - Yönetim */}
-                <Accordion.Item eventKey="4">
-                  <Accordion.Header>
-                    <FaDatabase className="me-2 text-info" />
-                    <strong>⚙️ Sistem Parametreleri Yönetimi</strong>
-                  </Accordion.Header>
-                  <Accordion.Body>
-                    {/* Hızlı İstatistikler */}
-                    <Accordion.Item eventKey="4-1">
-                      <Accordion.Header>
-                        <FaDatabase className="me-2 text-primary" />
-                        <strong>📊 Hızlı İstatistikler</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <Row className="g-3">
-                          <Col md={3}>
-                            <Card className="text-center border-0 shadow-sm h-100">
-                              <Card.Body className="p-3">
-                                <div className="text-primary mb-2">
-                                  <FaDatabase size={24} />
-                                </div>
-                                <h4 className="mb-1">{systemParameters.length}</h4>
-                                <small className="text-muted">Toplam Parametre</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col md={3}>
-                            <Card className="text-center border-0 shadow-sm h-100">
-                              <Card.Body className="p-3">
-                                <div className="text-success mb-2">
-                                  <FaEdit size={24} />
-                                </div>
-                                <h4 className="mb-1">{systemParameters.filter(p => p.is_editable).length}</h4>
-                                <small className="text-muted">Düzenlenebilir</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col md={3}>
-                            <Card className="text-center border-0 shadow-sm h-100">
-                              <Card.Body className="p-3">
-                                <div className="text-info mb-2">
-                                  <FaCog size={24} />
-                                </div>
-                                <h4 className="mb-1">{systemParameters.filter(p => p.param_type === 'json').length}</h4>
-                                <small className="text-muted">JSON Parametre</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col md={3}>
-                            <Card className="text-center border-0 shadow-sm h-100">
-                              <Card.Body className="p-3">
-                                <div className="text-warning mb-2">
-                                  <FaExclamationTriangle size={24} />
-                                </div>
-                                <h4 className="mb-1">{systemParameters.filter(p => p.param_type === 'boolean' && p.param_value === 'false').length}</h4>
-                                <small className="text-muted">Pasif Özellik</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        </Row>
-                      </Accordion.Body>
-                    </Accordion.Item>
-
-                    
-
-                                        {/* Basit Filtreleme */}
-                    <Accordion.Item eventKey="4-2">
-                      <Accordion.Header>
-                        <FaSearch className="me-2 text-info" />
-                        <strong>🔍 Parametre Filtreleme</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <Row className="g-3">
-                          <Col md={6}>
-                            <Form.Control
-                              type="text"
-                              placeholder="Parametre adı veya açıklama ile arama..."
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                          </Col>
-                          <Col md={3}>
-                            <Form.Select
-                              value={selectedCategory}
-                              onChange={(e) => setSelectedCategory(e.target.value)}
-                            >
-                              <option value="all">Tüm Kategoriler</option>
-                              <option value="Para Birimi">💰 Para Birimi</option>
-                              <option value="Güvenlik">🔒 Güvenlik</option>
-                              <option value="Gelir/Gider">📊 Gelir/Gider</option>
-                              <option value="Banka/Kredi Kartı">🏦 Banka/Kredi Kartı</option>
-                              <option value="Bildirimler">🔔 Bildirimler</option>
-                              <option value="Uygulama">🚀 Uygulama</option>
-                            </Form.Select>
-                          </Col>
-                          <Col md={3}>
-                            <Button 
-                              variant="outline-primary" 
-                              onClick={fetchSystemParameters}
-                              disabled={parametersLoading}
-                              className="w-100"
-                            >
-                              {parametersLoading ? (
-                                <>
-                                  <Spinner animation="border" size="sm" className="me-2" />
-                                  Yükleniyor...
-                                </>
-                              ) : (
-                                '🔄 Yenile'
-                              )}
-                            </Button>
-                          </Col>
-                        </Row>
-                        <div className="mt-3">
-                          <Badge bg="info" className="me-2">
-                            Toplam: {systemParameters.length}
-                          </Badge>
-                          <Badge bg="success" className="me-2">
-                            Düzenlenebilir: {systemParameters.filter(p => p.is_editable).length}
-                          </Badge>
-                          <Badge bg="warning">
-                            Filtrelenen: {filteredParameters.length}
-                          </Badge>
-                        </div>
-                      </Accordion.Body>
-                    </Accordion.Item>
-
-
-
-                    {/* Son Güncellemeler */}
-                    <Accordion.Item eventKey="4-3">
-                      <Accordion.Header>
-                        <FaClock className="me-2 text-secondary" />
-                        <strong>🕒 Son Güncellemeler</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <Row className="g-3">
-                          {systemParameters
-                            .filter(param => param.updated_at)
-                            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-                            .slice(0, 4)
-                            .map((param) => (
-                              <Col xs={6} md={3} key={param.id}>
-                                <Card className="text-center border-secondary h-100">
-                                  <Card.Body className="p-3">
-                                    <div className="text-secondary mb-2">
-                                      <FaEdit size={20} />
-                                    </div>
-                                    <h6 className="mb-1 text-truncate" title={param.param_key}>
-                                      {param.param_key}
-                                    </h6>
-                                    <small className="text-muted d-block">
-                                      {new Date(param.updated_at).toLocaleDateString('tr-TR')}
-                                    </small>
-                                    <small className="text-muted d-block">
-                                      {new Date(param.updated_at).toLocaleTimeString('tr-TR')}
-                                    </small>
-                                  </Card.Body>
-                                </Card>
-                              </Col>
-                            ))}
-                        </Row>
-                      </Accordion.Body>
-                    </Accordion.Item>
-
-                    {/* İstatistikler */}
-                    <Accordion.Item eventKey="4-4">
-                      <Accordion.Header>
-                        <FaChartBar className="me-2 text-info" />
-                        <strong>📈 Detaylı İstatistikler</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <Row className="g-3">
-                          <Col xs={6} md={3}>
-                            <Card className="text-center border-info">
-                              <Card.Body className="p-3">
-                                <div className="text-info mb-2">
-                                  <FaDatabase size={24} />
-                                </div>
-                                <h5 className="mb-1">{systemParameters.length}</h5>
-                                <small className="text-muted">Toplam Parametre</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col xs={6} md={3}>
-                            <Card className="text-center border-success">
-                              <Card.Body className="p-3">
-                                <div className="text-success mb-2">
-                                  <FaEdit size={24} />
-                                </div>
-                                <h5 className="mb-1">{systemParameters.filter(p => p.is_editable).length}</h5>
-                                <small className="text-muted">Düzenlenebilir</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col xs={6} md={3}>
-                            <Card className="text-center border-warning">
-                              <Card.Body className="p-3">
-                                <div className="text-warning mb-2">
-                                  <FaEye size={24} />
-                                </div>
-                                <h5 className="mb-1">{systemParameters.filter(p => !p.is_editable).length}</h5>
-                                <small className="text-muted">Salt Okunur</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col xs={6} md={3}>
-                            <Card className="text-center border-primary">
-                              <Card.Body className="p-3">
-                                <div className="text-primary mb-2">
-                                  <FaCode size={24} />
-                                </div>
-                                <h5 className="mb-1">{systemParameters.filter(p => p.param_type === 'json').length}</h5>
-                                <small className="text-muted">JSON Tipi</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        </Row>
-                      </Accordion.Body>
-                    </Accordion.Item>
-
-                    {/* Banka Yönetimi Araçları */}
-                    <div className="bank-tools mb-4">
-                      <Card className="border-primary">
-                        <Card.Header className="bg-primary text-white">
-                          <h6 className="mb-0">🏦 Banka Yönetimi Araçları</h6>
-                        </Card.Header>
-                        <Card.Body>
-                          <div className="mb-3">
-                            <Row>
-                              <Col md={8}>
-                                <Form.Control
-                                  type="text"
-                                  placeholder="Yeni banka adı girin..."
-                                  value={newBankName}
-                                  onChange={(e) => setNewBankName(e.target.value)}
-                                  onKeyPress={(e) => e.key === 'Enter' && addBank()}
-                                />
-                              </Col>
-                              <Col md={4}>
-                                <Button variant="success" onClick={addBank} className="w-100">
-                                  ➕ Banka Ekle
-                                </Button>
-                              </Col>
-                            </Row>
-                          </div>
-
-                          <Row>
-                            <Col md={6}>
-                              <Card className="border-warning">
-                                <Card.Body className="text-center">
-                                  <FaExclamationTriangle className="text-warning mb-2" size={24} />
-                                  <h6>Duplicate Bankaları Temizle</h6>
-                                  <p className="text-muted small">
-                                    Tekrarlanan banka kayıtlarını temizler
-                                  </p>
-                                  <Button 
-                                    variant="warning" 
-                                    onClick={cleanDuplicateBanks}
-                                    size="sm"
-                                  >
-                                    🧹 Duplicate Temizle
-                                  </Button>
-                                </Card.Body>
-                              </Card>
-                            </Col>
-                            <Col md={6}>
-                              <Card className="border-danger">
-                                <Card.Body className="text-center">
-                                  <FaTrash className="text-danger mb-2" size={24} />
-                                  <h6>Banka Listesini Reset Et</h6>
-                                  <p className="text-muted small">
-                                    Tüm bankaları siler ve standart listeyi yeniden oluşturur
-                                  </p>
-                                  <Button 
-                                    variant="danger" 
-                                    onClick={resetAllBanks}
-                                    size="sm"
-                                  >
-                                    🗑️ Reset Et
-                                  </Button>
-                                </Card.Body>
-                              </Card>
-                            </Col>
-                          </Row>
-                        </Card.Body>
-                      </Card>
-                    </div>
-
-                    <div className="parameter-table">
-                      {parametersLoading ? (
-                        <div className="text-center py-5">
-                          <Spinner animation="border" variant="primary" size="lg" />
-                          <p className="mt-3 text-muted">Sistem parametreleri yükleniyor...</p>
-                        </div>
-                      ) : (
-                        <div>
-                          {/* Gruplandırılmış Parametreler */}
-                          {Object.entries(groupParameters(filteredParameters)).map(([category, params]) => (
-                            <div key={category} className="parameter-category mb-4">
-                              <Card className="border-primary">
-                                <Card.Header className="bg-primary text-white">
-                                  <h6 className="mb-0">
-                                    {category === 'Para Birimi' && '💰 Para Birimi'}
-                                    {category === 'Güvenlik' && '🔒 Güvenlik'}
-                                    {category === 'Gelir/Gider' && '📊 Gelir/Gider'}
-                                    {category === 'Banka/Kredi Kartı' && '🏦 Banka/Kredi Kartı'}
-                                    {category === 'Bildirimler' && '🔔 Bildirimler'}
-                                    {category === 'Uygulama' && '🚀 Uygulama'}
-                                    {category === 'Kredi/Borç' && '💳 Kredi/Borç'}
-                                    {category === 'Ödeme' && '💸 Ödeme'}
-                                    {category === 'Genel' && '⚙️ Genel'}
-                                    {!['Para Birimi', 'Güvenlik', 'Gelir/Gider', 'Banka/Kredi Kartı', 'Bildirimler', 'Uygulama', 'Kredi/Borç', 'Ödeme', 'Genel'].includes(category) && `📁 ${category}`}
-                                  </h6>
-                                  <small className="text-white-50">
-                                    {params.length} parametre • {params.filter(p => p.is_editable).length} düzenlenebilir
-                                  </small>
-                                </Card.Header>
-                                <Card.Body className="p-0">
-                                  <Table responsive hover className="mb-0">
-                                    <thead className="table-light">
-                                      <tr>
-                                        <th>ID</th>
-                                        <th>Parametre Adı</th>
-                                        <th>Değer</th>
-                                        <th>Tip</th>
-                                        <th>Açıklama</th>
-                                        <th>Düzenlenebilir</th>
-                                        <th>Son Güncelleme</th>
-                                        <th>İşlemler</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {params.map((param) => (
-                                        <tr key={param.id} className="parameter-row">
-                                          <td>
-                                            <Badge bg="secondary">{param.id}</Badge>
-                                          </td>
-                                          <td>
-                                            <strong className="text-primary">{param.param_key}</strong>
-                                          </td>
-                                          <td className="parameter-value-cell">
-                                            {bulkEditMode ? (
-                                              renderParameterValueInput(param, bulkEditParameters.find(bp => bp.id === param.id)?.param_value || param.param_value, (value) => updateBulkParameter(param.id, value), "sm")
-                                            ) : (
-                                              <div className="parameter-value-display">
-                                                {renderParameterValue(param)}
-                                              </div>
-                                            )}
-                                          </td>
-                                          <td>{renderParameterType(param.param_type)}</td>
-                                          <td>
-                                            <small className="text-muted">
-                                              {param.description || 'Açıklama yok'}
-                                            </small>
-                                          </td>
-                                          <td>
-                                            {param.is_editable ? (
-                                              <Badge bg="success">Evet</Badge>
-                                            ) : (
-                                              <Badge bg="danger">Hayır</Badge>
-                                            )}
-                                          </td>
-                                          <td>
-                                            <small className="text-muted">
-                                              {param.updated_at ? 
-                                                new Date(param.updated_at).toLocaleDateString('tr-TR') : 
-                                                'Bilinmiyor'
-                                              }
-                                            </small>
-                                          </td>
-                                          <td>
-                                            <div className="btn-group" role="group">
-                                              <Button
-                                                variant="info"
-                                                size="sm"
-                                                onClick={() => {
-                                                  if (param.param_key === 'expense_categories_list' || param.param_key === 'banks_list') {
-                                                    handleEditDynamicParameter(param);
-                                                  } else {
-                                                    openEditModal(param);
-                                                  }
-                                                }}
-                                                disabled={!param.is_editable}
-                                                title="Düzenle"
-                                              >
-                                                <FaEdit />
+              {parametersLoading ? (
+                <div className="text-center">
+                  <Spinner animation="border" />
+                  <p className="mt-2">Parametreler yükleniyor...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Kategorilere Göre Gruplandırılmış Görünüm */}
+                  <div className="mb-4">
+                    <h6 className="mb-3">
+                      <FaThList className="me-2" />
+                      Kategorilere Göre Gruplandırılmış Parametreler
+                    </h6>
+                    <Accordion>
+                      {(() => {
+                        const categories = {};
+                        filteredParameters.forEach(param => {
+                          if (!categories[param.category]) {
+                            categories[param.category] = [];
+                          }
+                          categories[param.category].push(param);
+                        });
+                        
+                        return Object.entries(categories).map(([category, params], index) => (
+                          <Accordion.Item key={category} eventKey={index.toString()}>
+                            <Accordion.Header>
+                              <Badge bg="info" className="me-2">{category}</Badge>
+                              <span className="fw-bold">{category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                              <Badge bg="secondary" className="ms-2">{params.length} parametre</Badge>
+                            </Accordion.Header>
+                            <Accordion.Body>
+                              <div className="table-responsive">
+                                <Table size="sm" striped>
+                                  <thead>
+                                    <tr>
+                                      <th>Anahtar</th>
+                                      <th>Değer</th>
+                                      <th>Tip</th>
+                                      <th>Açıklama</th>
+                                      <th>İşlemler</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {params.map(param => (
+                                      <tr key={param.id}>
+                                        <td>
+                                          <div>
+                                            <code className="text-primary">{param.param_key}</code>
+                                            <div className="mt-1">
+                                              {param.is_required && <Badge bg="danger" size="sm" className="me-1">Zorunlu</Badge>}
+                                              {param.is_sensitive && <Badge bg="warning" size="sm" className="me-1">Hassas</Badge>}
+                                              {!param.is_editable && <Badge bg="secondary" size="sm" className="me-1">Salt Okunur</Badge>}
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td>
+                                          {param.is_sensitive ? (
+                                            <div>
+                                              <span className="text-muted">••••••••</span>
+                                              <Button variant="link" size="sm" className="p-0 ms-2" onClick={() => setShowSensitiveValue(param.id)}>
+                                                <FaEye />
                                               </Button>
-                                              {param.param_key !== 'expense_categories_list' && param.param_key !== 'banks_list' && (
-                                                <Button
-                                                  variant="danger"
-                                                  size="sm"
-                                                  onClick={() => handleDeleteParameter(param.id)}
-                                                  disabled={!param.is_editable}
-                                                  title="Sil"
-                                                  className="ms-1"
-                                                >
-                                                  <FaTrash />
-                                                </Button>
+                                            </div>
+                                          ) : (
+                                            <div>
+                                              <span className="text-break">{param.param_value}</span>
+                                              {param.param_type === 'boolean' && (
+                                                <Badge bg={param.param_value === 'true' ? 'success' : 'secondary'} size="sm" className="ms-1">
+                                                  {param.param_value === 'true' ? 'Açık' : 'Kapalı'}
+                                                </Badge>
                                               )}
                                             </div>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </Table>
-                                </Card.Body>
-                              </Card>
-                            </div>
+                                          )}
+                                        </td>
+                                        <td>
+                                          <Badge bg="secondary">{param.param_type}</Badge>
+                                        </td>
+                                        <td>
+                                          <div className="text-break small">
+                                            {param.description}
+                                          </div>
+                                        </td>
+                                        <td>
+                                          <ButtonGroup size="sm" vertical>
+                                            <Button 
+                                              variant="outline-primary" 
+                                              size="sm"
+                                              onClick={() => {
+                                                setParameterForm({
+                                                  id: param.id,
+                                                  param_key: param.param_key,
+                                                  param_value: param.param_value,
+                                                  param_type: param.param_type,
+                                                  description: param.description || '',
+                                                  category: param.category,
+                                                  is_editable: param.is_editable,
+                                                  is_sensitive: param.is_sensitive
+                                                });
+                                                setShowParameterModal(true);
+                                              }}
+                                              disabled={!param.is_editable}
+                                            >
+                                              <FaEdit />
+                                            </Button>
+                                            <Button 
+                                              variant="outline-danger" 
+                                              size="sm"
+                                              onClick={() => deleteSystemParameter(param.id)}
+                                              disabled={param.is_required}
+                                            >
+                                              <FaTrash />
+                                            </Button>
+                                          </ButtonGroup>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </Table>
+                              </div>
+                            </Accordion.Body>
+                          </Accordion.Item>
+                        ));
+                      })()}
+                    </Accordion>
+                  </div>
+
+                  {/* Detaylı Tablo Görünümü */}
+                  <div>
+                    <h6 className="mb-3">
+                      <FaTable className="me-2" />
+                      Detaylı Tablo Görünümü
+                    </h6>
+                    <div className="table-responsive">
+                      <Table responsive striped hover>
+                        <thead className="table-dark">
+                          <tr>
+                            <th style={{width: '15%'}}>Anahtar</th>
+                            <th style={{width: '20%'}}>Değer</th>
+                            <th style={{width: '8%'}}>Tip</th>
+                            <th style={{width: '10%'}}>Kategori</th>
+                            <th style={{width: '25%'}}>Açıklama</th>
+                            <th style={{width: '12%'}}>Özellikler</th>
+                            <th style={{width: '10%'}}>İşlemler</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredParameters.map(param => (
+                            <tr key={param.id}>
+                              <td>
+                                <div>
+                                  <code className="text-primary">{param.param_key}</code>
+                                  <div className="mt-1">
+                                    {param.is_required && <Badge bg="danger" size="sm" className="me-1">Zorunlu</Badge>}
+                                    {param.is_sensitive && <Badge bg="warning" size="sm" className="me-1">Hassas</Badge>}
+                                    {!param.is_editable && <Badge bg="secondary" size="sm" className="me-1">Salt Okunur</Badge>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                {param.is_sensitive ? (
+                                  <div>
+                                    <span className="text-muted">••••••••</span>
+                                    <Button variant="link" size="sm" className="p-0 ms-2" onClick={() => setShowSensitiveValue(param.id)}>
+                                      <FaEye />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <span className="text-break">{param.param_value}</span>
+                                    {param.param_type === 'boolean' && (
+                                      <Badge bg={param.param_value === 'true' ? 'success' : 'secondary'} size="sm" className="ms-1">
+                                        {param.param_value === 'true' ? 'Açık' : 'Kapalı'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td>
+                                <Badge bg="secondary">{param.param_type}</Badge>
+                              </td>
+                              <td>
+                                <Badge bg="info">{param.category}</Badge>
+                              </td>
+                              <td>
+                                <div className="text-break">
+                                  {param.description}
+                                  {param.validation_rules && (
+                                    <div className="mt-1">
+                                      <small className="text-muted">
+                                        <FaCode className="me-1" />
+                                        {param.validation_rules}
+                                      </small>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="small">
+                                  {param.min_value && param.max_value && (
+                                    <div>Min: {param.min_value}, Max: {param.max_value}</div>
+                                  )}
+                                  {param.options && (
+                                    <div>Seçenekler: {param.options}</div>
+                                  )}
+                                  {param.default_value && (
+                                    <div>Varsayılan: {param.default_value}</div>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <ButtonGroup size="sm" vertical>
+                                  <Button 
+                                    variant="outline-primary" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setParameterForm({
+                                        id: param.id,
+                                        param_key: param.param_key,
+                                        param_value: param.param_value,
+                                        param_type: param.param_type,
+                                        description: param.description || '',
+                                        category: param.category,
+                                        is_editable: param.is_editable,
+                                        is_sensitive: param.is_sensitive
+                                      });
+                                      setShowParameterModal(true);
+                                    }}
+                                    disabled={!param.is_editable}
+                                  >
+                                    <FaEdit />
+                                  </Button>
+                                  <Button 
+                                    variant="outline-danger" 
+                                    size="sm"
+                                    onClick={() => deleteSystemParameter(param.id)}
+                                    disabled={param.is_required}
+                                  >
+                                    <FaTrash />
+                                  </Button>
+                                </ButtonGroup>
+                              </td>
+                            </tr>
                           ))}
-                          
-                          {/* Parametre bulunamadı mesajı */}
-                          {Object.keys(groupParameters(filteredParameters)).length === 0 && (
-                            <div className="text-center py-5">
-                              <div className="text-muted">
-                                <FaExclamationTriangle className="mb-2" size={24} />
-                                <p className="mb-0">Filtrelere uygun parametre bulunamadı</p>
-                                <small>Filtreleri temizleyip tekrar deneyin</small>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                        </tbody>
+                      </Table>
                     </div>
+                  </div>
+                </>
+              )}
 
-                    <div className="d-flex justify-content-end">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={openAddModal}
-                      >
-                        ➕ Yeni Parametre Ekle
-                      </Button>
-                    </div>
-
-                                        {/* Toplu Düzenleme */}
-                    <Accordion.Item eventKey="4-5">
-                      <Accordion.Header>
-                        <FaEdit className="me-2 text-warning" />
-                        <strong>🔄 Toplu Düzenleme</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="d-flex align-items-center mb-3">
-                          <Form.Check
-                            type="switch"
-                            id="bulkEditSwitch"
-                            checked={bulkEditMode}
-                            onChange={(e) => setBulkEditMode(e.target.checked)}
-                            className="me-3"
+              {/* İstatistikler */}
+              <div className="row mt-3">
+                <div className="col-md-3">
+                  <Card className="text-center">
+                    <Card.Body className="py-2">
+                      <small className="text-muted">Toplam Parametre</small>
+                      <div className="h5 mb-0">{systemParameters.length}</div>
+                    </Card.Body>
+                  </Card>
+                </div>
+                <div className="col-md-3">
+                  <Card className="text-center">
+                    <Card.Body className="py-2">
+                      <small className="text-muted">Zorunlu</small>
+                      <div className="h5 mb-0">{systemParameters.filter(p => p.is_required).length}</div>
+                    </Card.Body>
+                  </Card>
+                </div>
+                <div className="col-md-3">
+                  <Card className="text-center">
+                    <Card.Body className="py-2">
+                      <small className="text-muted">Hassas</small>
+                      <div className="h5 mb-0">{systemParameters.filter(p => p.is_sensitive).length}</div>
+                    </Card.Body>
+                  </Card>
+                </div>
+                <div className="col-md-3">
+                  <Card className="text-center">
+                    <Card.Body className="py-2">
+                      <small className="text-muted">Kategoriler</small>
+                      <div className="h5 mb-0">{new Set(systemParameters.map(p => p.category)).size}</div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Tab>
+        
+        <Tab eventKey="configuration" title="Sistem Konfigürasyonu">
+          <Card>
+            <Card.Header>
+              <h6><FaServer className="me-2" />Sistem Konfigürasyonu</h6>
+            </Card.Header>
+            <Card.Body>
+              <Tabs defaultActiveKey="application" className="mb-3">
+                <Tab eventKey="application" title="Uygulama">
+                  <Form>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Uygulama Adı</Form.Label>
+                          <Form.Control
+                            type="text"
+                            value={systemConfig.application.name}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              application: { ...prev.application, name: e.target.value }
+                            }))}
                           />
-                          <span className="text-muted">
-                            Toplu düzenleme modunu açarak birden fazla parametreyi aynı anda düzenleyebilirsiniz
-                          </span>
-                        </div>
-                        {bulkEditMode && (
-                          <div className="alert alert-info">
-                            <div className="d-flex justify-content-between align-items-center">
-                              <div>
-                                <strong>Toplu Düzenleme Modu Aktif</strong>
-                                <br />
-                                <small className="text-muted">
-                                  Parametre değerlerini doğrudan tabloda düzenleyebilirsiniz
-                                </small>
-                              </div>
-                              <div>
-                                <Button
-                                  variant="success"
-                                  size="sm"
-                                  onClick={handleBulkUpdate}
-                                  disabled={bulkEditParameters.length === 0}
-                                  className="me-2"
-                                >
-                                  💾 Tüm Değişiklikleri Kaydet
-                                </Button>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={closeBulkEditMode}
-                                >
-                                  ❌ Modu Kapat
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Accordion.Body>
-                    </Accordion.Item>
-
-                    {/* Dışa Aktar */}
-                    <Accordion.Item eventKey="4-6">
-                      <Accordion.Header>
-                        <FaDownload className="me-2 text-info" />
-                        <strong>📤 Parametreleri Dışa Aktar</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="alert alert-light">
-                          <p className="mb-2">
-                            <strong>JSON Formatında Dışa Aktar:</strong> Tüm sistem parametrelerini JSON dosyası olarak indirin.
-                          </p>
-                          <Button
-                            variant="outline-info"
-                            size="sm"
-                            onClick={handleExportParameters}
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Versiyon</Form.Label>
+                          <Form.Control
+                            type="text"
+                            value={systemConfig.application.version}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              application: { ...prev.application, version: e.target.value }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Zaman Dilimi</Form.Label>
+                          <Form.Select
+                            value={systemConfig.application.timezone}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              application: { ...prev.application, timezone: e.target.value }
+                            }))}
                           >
-                            📄 JSON Olarak Dışa Aktar
-                          </Button>
-                        </div>
-                      </Accordion.Body>
-                    </Accordion.Item>
+                            <option value="Europe/Istanbul">Europe/Istanbul</option>
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">America/New_York</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Para Birimi</Form.Label>
+                          <Form.Select
+                            value={systemConfig.application.currency}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              application: { ...prev.application, currency: e.target.value }
+                            }))}
+                          >
+                            <option value="TRY">TRY - Türk Lirası</option>
+                            <option value="USD">USD - Amerikan Doları</option>
+                            <option value="EUR">EUR - Euro</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Form>
+                </Tab>
+                
+                <Tab eventKey="security" title="Güvenlik">
+                  <Form>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>JWT Geçerlilik Süresi</Form.Label>
+                          <Form.Control
+                            type="text"
+                            value={systemConfig.security.jwt_expires_in}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              security: { ...prev.security, jwt_expires_in: e.target.value }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Minimum Şifre Uzunluğu</Form.Label>
+                          <Form.Control
+                            type="number"
+                            value={systemConfig.security.password_min_length}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              security: { ...prev.security, password_min_length: parseInt(e.target.value) }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Maksimum Giriş Denemesi</Form.Label>
+                          <Form.Control
+                            type="number"
+                            value={systemConfig.security.max_login_attempts}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              security: { ...prev.security, max_login_attempts: parseInt(e.target.value) }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Oturum Zaman Aşımı (saniye)</Form.Label>
+                          <Form.Control
+                            type="number"
+                            value={systemConfig.security.session_timeout}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              security: { ...prev.security, session_timeout: parseInt(e.target.value) }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Form>
+                </Tab>
+                
+                <Tab eventKey="monitoring" title="İzleme">
+                  <Form>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>CPU Kullanım Uyarı Eşiği (%)</Form.Label>
+                          <Form.Control
+                            type="number"
+                            value={systemConfig.monitoring.alert_thresholds.cpu_usage}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              monitoring: {
+                                ...prev.monitoring,
+                                alert_thresholds: {
+                                  ...prev.monitoring.alert_thresholds,
+                                  cpu_usage: parseInt(e.target.value)
+                                }
+                              }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Bellek Kullanım Uyarı Eşiği (%)</Form.Label>
+                          <Form.Control
+                            type="number"
+                            value={systemConfig.monitoring.alert_thresholds.memory_usage}
+                            onChange={(e) => setSystemConfig(prev => ({
+                              ...prev,
+                              monitoring: {
+                                ...prev.monitoring,
+                                alert_thresholds: {
+                                  ...prev.monitoring.alert_thresholds,
+                                  memory_usage: parseInt(e.target.value)
+                                }
+                              }
+                            }))}
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Form>
+                </Tab>
+              </Tabs>
+              
+              <div className="text-end">
+                <Button variant="success" className="me-2">
+                  <FaSave className="me-2" />
+                  Kaydet
+                </Button>
+                <Button variant="secondary">
+                  <FaUndo className="me-2" />
+                  Sıfırla
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Tab>
+      </Tabs>
+    </div>
+  );
 
-                    {/* İçe Aktar */}
-                    <Accordion.Item eventKey="4-7">
-                      <Accordion.Header>
-                        <FaUpload className="me-2 text-success" />
-                        <strong>📥 Parametreleri İçe Aktar</strong>
-                      </Accordion.Header>
-                      <Accordion.Body>
-                        <div className="alert alert-light">
-                          <p className="mb-2">
-                            <strong>JSON Formatında İçe Aktar:</strong> Daha önce dışa aktarılan parametreleri geri yükleyin.
-                          </p>
-                          <Form.Group className="mb-3">
-                            <Form.Label>JSON Verisi:</Form.Label>
-                            <Form.Control
-                              as="textarea"
-                              value={importData}
-                              onChange={(e) => setImportData(e.target.value)}
-                              placeholder='{"parameters": [{"param_key": "example", "param_value": "value", "param_type": "string", "description": "Açıklama", "category": "general", "is_editable": true}]}'
-                              rows={6}
-                              className="font-monospace"
-                            />
-                          </Form.Group>
-                          <div className="d-flex justify-content-between align-items-center mb-3">
-                            <Form.Check
-                              type="checkbox"
-                              id="overwriteSwitch"
-                              label="Var olan parametreleri üzerine yaz"
-                              checked={importOverwrite}
-                              onChange={(e) => setImportOverwrite(e.target.checked)}
-                            />
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={handleImportParameters}
-                              disabled={!importData}
-                            >
-                              📥 Parametreleri İçe Aktar
-                            </Button>
-                          </div>
-                        </div>
-                      </Accordion.Body>
-                    </Accordion.Item>
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
-            </Col>
-          </Row>
-        </Container>
-      </div>
-
-      {/* Veritabanı Sıfırlama Modal */}
-      <Modal show={showResetModal} onHide={() => setShowResetModal(false)}>
-        <Modal.Header closeButton className="bg-warning text-white">
-          <Modal.Title>⚠️ Dikkat!</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p><strong>Bu işlem geri alınamaz!</strong></p>
-          <p>Tüm kullanıcı verileri, hesaplar, kredi kartları, gelirler ve giderler kalıcı olarak silinecektir.</p>
-          <p>Devam etmek istediğinizden emin misiniz?</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowResetModal(false)}>
-            İptal
-          </Button>
-          <Button variant="danger" onClick={resetDatabase}>
-            🗑️ Evet, Sıfırla
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Mock Veri Ekleme Modal */}
-      <Modal show={showMockDataModal} onHide={() => setShowMockDataModal(false)}>
-        <Modal.Header closeButton className="bg-success text-white">
-          <Modal.Title>📊 Test Verileri Ekle</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Aşağıdaki test verileri eklenecektir:</p>
-          <ul>
-            <li><strong>3 Test Kullanıcısı:</strong> test1, test2, test3 (şifre: 12345)</li>
-            <li><strong>3 Test Bankası</strong></li>
-            <li><strong>3 Test Hesabı</strong></li>
-            <li><strong>3 Test Kredi Kartı</strong></li>
-            <li><strong>3 Test Geliri</strong></li>
-            <li><strong>3 Test Gideri</strong></li>
-            <li><strong>2 Test Kira Gideri</strong></li>
-          </ul>
-          <p>Devam etmek istiyor musunuz?</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowMockDataModal(false)}>
-            İptal
-          </Button>
-          <Button variant="success" onClick={insertMockData}>
-            📊 Evet, Ekle
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Kullanıcı Detay Modal */}
+  // Modals
+  const renderModals = () => (
+    <>
+      {/* User Modal */}
       <Modal show={showUserModal} onHide={() => setShowUserModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>👤 Kullanıcı Detayları</Modal.Title>
+          <Modal.Title>
+            <FaUserPlus className="me-2" />
+            Yeni Kullanıcı Ekle
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedUser && (
+          <Form>
             <Row>
               <Col md={6}>
-                <h6>Kişisel Bilgiler</h6>
-                <Table size="sm">
-                  <tbody>
-                    <tr>
-                      <td><strong>ID:</strong></td>
-                      <td>{selectedUser.id}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Kullanıcı Adı:</strong></td>
-                      <td>{selectedUser.username}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>E-posta:</strong></td>
-                      <td>{selectedUser.email}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Ad Soyad:</strong></td>
-                      <td>{selectedUser.full_name}</td>
-                    </tr>
-                  </tbody>
-                </Table>
+                <Form.Group className="mb-3">
+                  <Form.Label>Kullanıcı Adı</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={userForm.username}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
+                  />
+                </Form.Group>
               </Col>
               <Col md={6}>
-                <h6>Hesap Bilgileri</h6>
-                <Table size="sm">
-                  <tbody>
-                    <tr>
-                      <td><strong>Durum:</strong></td>
-                      <td>
-                        {selectedUser.is_active ? (
-                          <Badge bg="success">Aktif</Badge>
-                        ) : (
-                          <Badge bg="danger">Pasif</Badge>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Son Giriş:</strong></td>
-                      <td>
-                        {selectedUser.last_login ? (
-                          <small>{new Date(selectedUser.last_login).toLocaleString('tr-TR')}</small>
-                        ) : (
-                          <span className="text-muted">Hiç giriş yapmamış</span>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Kayıt Tarihi:</strong></td>
-                      <td>
-                        <small>{new Date(selectedUser.created_at).toLocaleString('tr-TR')}</small>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Güncelleme:</strong></td>
-                      <td>
-                        <small>{new Date(selectedUser.updated_at).toLocaleString('tr-TR')}</small>
-                      </td>
-                    </tr>
-                  </tbody>
-                </Table>
+                <Form.Group className="mb-3">
+                  <Form.Label>E-posta</Form.Label>
+                  <Form.Control
+                    type="email"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </Form.Group>
               </Col>
             </Row>
-          )}
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Ad Soyad</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={userForm.full_name}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, full_name: e.target.value }))}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Rol</Form.Label>
+                  <Form.Select
+                    value={userForm.role}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, role: e.target.value }))}
+                  >
+                    <option value="user">Kullanıcı</option>
+                    <option value="admin">Admin</option>
+                    <option value="moderator">Moderatör</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowUserModal(false)}>
-            Kapat
+            İptal
+          </Button>
+          <Button variant="primary">
+            <FaSave className="me-2" />
+            Kaydet
           </Button>
         </Modal.Footer>
       </Modal>
 
-             {/* Parametre Düzenleme Modal */}
-       <Modal show={showParameterModal} onHide={() => setShowParameterModal(false)} size="lg" className="parameter-modal">
+      {/* Gizli dosya input'u */}
+      <input
+        type="file"
+        id="importFile"
+        accept=".json"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          if (e.target.files[0]) {
+            importSystemParameters(e.target.files[0], false);
+            e.target.value = ''; // Input'u temizle
+          }
+        }}
+      />
+
+      {/* Parameter Modal */}
+      <Modal show={showParameterModal} onHide={() => setShowParameterModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>✏️ Parametre Düzenle</Modal.Title>
+          <Modal.Title>
+            <FaEdit className="me-2" />
+            Parametre Düzenle
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleUpdateParameter}>
-            <Form.Group className="mb-3">
-              <Form.Label>Parametre Adı</Form.Label>
-              <Form.Control
-                type="text"
-                value={editingParameter?.param_key || ''}
-                onChange={(e) => setEditingParameter({ ...editingParameter, param_key: e.target.value })}
-                size="lg"
-                disabled={editingParameter?.param_key === 'expense_categories_list' || editingParameter?.param_key === 'banks_list'}
-              />
-            </Form.Group>
-            
-            {/* Gider kategorileri için özel düzenleme */}
-            {editingParameter?.param_key === 'expense_categories_list' && editingParameter?.categories ? (
-              <div>
-                <Form.Label>Gider Kategorileri</Form.Label>
-                {editingParameter.categories.map((category, index) => (
-                  <Row key={index} className="mb-2">
-                    <Col md={6}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Kategori adı"
-                        value={category.name || ''}
-                        onChange={(e) => {
-                          const newCategories = [...editingParameter.categories];
-                          newCategories[index] = { ...newCategories[index], name: e.target.value };
-                          setEditingParameter({ ...editingParameter, categories: newCategories });
-                        }}
-                      />
-                    </Col>
-                    <Col md={3}>
-                      <Form.Control
-                        type="color"
-                        value={category.color || '#007bff'}
-                        onChange={(e) => {
-                          const newCategories = [...editingParameter.categories];
-                          newCategories[index] = { ...newCategories[index], color: e.target.value };
-                          setEditingParameter({ ...editingParameter, categories: newCategories });
-                        }}
-                      />
-                    </Col>
-                    <Col md={2}>
-                      <Form.Control
-                        type="text"
-                        placeholder="🏠"
-                        value={category.icon || ''}
-                        onChange={(e) => {
-                          const newCategories = [...editingParameter.categories];
-                          newCategories[index] = { ...newCategories[index], icon: e.target.value };
-                          setEditingParameter({ ...editingParameter, categories: newCategories });
-                        }}
-                      />
-                    </Col>
-                    <Col md={1}>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => {
-                          const newCategories = editingParameter.categories.filter((_, i) => i !== index);
-                          setEditingParameter({ ...editingParameter, categories: newCategories });
-                        }}
-                      >
-                        ✕
-                      </Button>
-                    </Col>
-                  </Row>
-                ))}
-                <Button
-                  variant="success"
-                  size="sm"
-                  onClick={() => {
-                    const newCategories = [...(editingParameter.categories || []), { name: '', color: '#007bff', icon: '📌' }];
-                    setEditingParameter({ ...editingParameter, categories: newCategories });
-                  }}
-                >
-                  ➕ Kategori Ekle
-                </Button>
-              </div>
-            ) : editingParameter?.param_key === 'banks_list' && editingParameter?.banks ? (
-              /* Banka listesi için özel düzenleme */
-              <div>
-                <Form.Label>Banka Listesi</Form.Label>
-                {editingParameter.banks.map((bank, index) => (
-                  <Row key={index} className="mb-2">
-                    <Col md={10}>
-                      <Form.Control
-                        type="text"
-                        placeholder="Banka adı"
-                        value={bank.bank_name || ''}
-                        onChange={(e) => {
-                          const newBanks = [...editingParameter.banks];
-                          newBanks[index] = { ...newBanks[index], bank_name: e.target.value };
-                          setEditingParameter({ ...editingParameter, banks: newBanks });
-                        }}
-                      />
-                    </Col>
-                    <Col md={2}>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => {
-                          const newBanks = editingParameter.banks.filter((_, i) => i !== index);
-                          setEditingParameter({ ...editingParameter, banks: newBanks });
-                        }}
-                      >
-                        ✕
-                      </Button>
-                    </Col>
-                  </Row>
-                ))}
-                <Button
-                  variant="success"
-                  size="sm"
-                  onClick={() => {
-                    const newBanks = [...(editingParameter.banks || []), { bank_name: '', id: `new_${Date.now()}` }];
-                    setEditingParameter({ ...editingParameter, banks: newBanks });
-                  }}
-                >
-                  ➕ Banka Ekle
-                </Button>
-              </div>
-            ) : (
-              /* Normal parametre düzenleme */
-              <Form.Group className="mb-3">
-                <Form.Label>Değer</Form.Label>
-                {renderParameterValueInput(
-                  { param_type: editingParameter?.param_type || 'string' },
-                  editingParameter?.param_value || '',
-                  (value) => setEditingParameter({ ...editingParameter, param_value: value })
-                )}
-              </Form.Group>
-            )}
-            <Form.Group className="mb-3">
-              <Form.Label>Tip</Form.Label>
-              <Form.Select
-                value={editingParameter?.param_type || ''}
-                onChange={(e) => setEditingParameter({ ...editingParameter, param_type: e.target.value })}
-                size="lg"
-              >
-                <option value="string">String (Metin)</option>
-                <option value="number">Number (Sayı)</option>
-                <option value="boolean">Boolean (Evet/Hayır)</option>
-                <option value="json">JSON (Dizi/Obje)</option>
-                <option value="date">Date (Tarih)</option>
-              </Form.Select>
-            </Form.Group>
+          <Form>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Parametre Adı</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={parameterForm.param_key}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, param_key: e.target.value }))}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Değer</Form.Label>
+                  <Form.Control
+                    type={parameterForm.param_type === 'boolean' ? 'select' : 'text'}
+                    value={parameterForm.param_value}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, param_value: e.target.value }))}
+                  />
+                  {parameterForm.param_type === 'boolean' && (
+                    <Form.Select
+                      value={parameterForm.param_value}
+                      onChange={(e) => setParameterForm(prev => ({ ...prev, param_value: e.target.value }))}
+                    >
+                      <option value="true">Açık</option>
+                      <option value="false">Kapalı</option>
+                    </Form.Select>
+                  )}
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tip</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={parameterForm.param_type}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Kategori</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={parameterForm.category}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
             <Form.Group className="mb-3">
               <Form.Label>Açıklama</Form.Label>
               <Form.Control
-                type="text"
-                value={editingParameter?.description || ''}
-                onChange={(e) => setEditingParameter({ ...editingParameter, description: e.target.value })}
-                size="lg"
+                as="textarea"
+                rows={3}
+                value={parameterForm.description}
+                readOnly
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Kategori</Form.Label>
-              <Form.Select
-                value={editingParameter?.category || ''}
-                onChange={(e) => setEditingParameter({ ...editingParameter, category: e.target.value })}
-                size="lg"
-              >
-                <option value="general">Genel</option>
-                <option value="financial">Finansal</option>
-                <option value="income">Gelir</option>
-                <option value="expense">Gider</option>
-                <option value="account">Hesap</option>
-                <option value="credit_card">Kredi Kartı</option>
-                <option value="loan">Kredi</option>
-                <option value="notifications">Bildirimler</option>
-                <option value="security">Güvenlik</option>
-                <option value="system">Sistem</option>
-                <option value="localization">Lokalizasyon</option>
-                <option value="reporting">Raporlama</option>
-                <option value="api">API</option>
-                <option value="ai">AI & Otomasyon</option>
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Düzenlenebilir</Form.Label>
-              <Form.Check
-                type="checkbox"
-                checked={editingParameter?.is_editable || false}
-                onChange={(e) => setEditingParameter({ ...editingParameter, is_editable: e.target.checked })}
-              />
-            </Form.Group>
-            <div className="d-grid gap-2">
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Kaydediliyor...
-                  </>
-                ) : (
-                  '💾 Kaydet'
-                )}
-              </Button>
-              <Button variant="secondary" size="lg" onClick={() => setShowParameterModal(false)}>
-                ❌ İptal
-              </Button>
-            </div>
           </Form>
         </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowParameterModal(false)}>
+            İptal
+          </Button>
+          <Button 
+            variant="primary"
+            onClick={async () => {
+              const success = await updateSystemParameter(parameterForm.id, parameterForm.param_value);
+              if (success) {
+                setShowParameterModal(false);
+                setParameterForm({
+                  param_key: '',
+                  param_value: '',
+                  param_type: 'string',
+                  description: '',
+                  category: 'general',
+                  is_editable: true,
+                  is_sensitive: false
+                });
+              }
+            }}
+          >
+            <FaSave className="me-2" />
+            Kaydet
+          </Button>
+        </Modal.Footer>
       </Modal>
 
-             {/* Yeni Parametre Ekleme Modal */}
-       <Modal show={showAddParameterModal} onHide={() => setShowAddParameterModal(false)} size="lg" className="parameter-modal">
+      {/* Add Parameter Modal */}
+      <Modal show={showAddParameterModal} onHide={() => setShowAddParameterModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>➕ Yeni Parametre Ekle</Modal.Title>
+          <Modal.Title>
+            <FaPlus className="me-2" />
+            Yeni Parametre Ekle
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleAddParameter}>
-            <Form.Group className="mb-3">
-              <Form.Label>Parametre Adı</Form.Label>
-              <Form.Control
-                type="text"
-                value={parameterForm.param_key}
-                onChange={(e) => setParameterForm({ ...parameterForm, param_key: e.target.value })}
-                placeholder="Örn: max_login_attempts"
-                required
-                size="lg"
-              />
-            </Form.Group>
-                         <Form.Group className="mb-3">
-               <Form.Label>Değer</Form.Label>
-               {renderParameterValueInput(
-                 { param_type: parameterForm.param_type },
-                 parameterForm.param_value,
-                 (value) => setParameterForm({ ...parameterForm, param_value: value })
-               )}
-             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Tip</Form.Label>
-              <Form.Select
-                value={parameterForm.param_type}
-                onChange={(e) => setParameterForm({ ...parameterForm, param_type: e.target.value })}
-                placeholder="Örn: number"
-                required
-                size="lg"
-              >
-                <option value="string">String (Metin)</option>
-                <option value="number">Number (Sayı)</option>
-                <option value="boolean">Boolean (Evet/Hayır)</option>
-                <option value="json">JSON (Dizi/Obje)</option>
-                <option value="date">Date (Tarih)</option>
-              </Form.Select>
-            </Form.Group>
+          <Form>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Parametre Adı *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={parameterForm.param_key}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, param_key: e.target.value }))}
+                    placeholder="parametre_adi"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Değer *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={parameterForm.param_value}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, param_value: e.target.value }))}
+                    placeholder="Parametre değeri"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tip</Form.Label>
+                  <Form.Select
+                    value={parameterForm.param_type}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, param_type: e.target.value }))}
+                  >
+                    <option value="string">String</option>
+                    <option value="number">Number</option>
+                    <option value="boolean">Boolean</option>
+                    <option value="json">JSON</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Kategori</Form.Label>
+                  <Form.Select
+                    value={parameterForm.category}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    <option value="general">Genel</option>
+                    <option value="financial">Finansal</option>
+                    <option value="security">Güvenlik</option>
+                    <option value="database">Veritabanı</option>
+                    <option value="email">E-posta</option>
+                    <option value="ui">Kullanıcı Arayüzü</option>
+                    <option value="notification">Bildirim</option>
+                    <option value="backup">Yedekleme</option>
+                    <option value="monitoring">İzleme</option>
+                    <option value="datetime">Tarih/Zaman</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Düzenlenebilir</Form.Label>
+                  <Form.Check
+                    type="checkbox"
+                    checked={parameterForm.is_editable}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, is_editable: e.target.checked }))}
+                    label="Parametre düzenlenebilir"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Hassas Veri</Form.Label>
+                  <Form.Check
+                    type="checkbox"
+                    checked={parameterForm.is_sensitive}
+                    onChange={(e) => setParameterForm(prev => ({ ...prev, is_sensitive: e.target.checked }))}
+                    label="Hassas veri (şifre, anahtar vb.)"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
             <Form.Group className="mb-3">
               <Form.Label>Açıklama</Form.Label>
               <Form.Control
-                type="text"
+                as="textarea"
+                rows={3}
                 value={parameterForm.description}
-                onChange={(e) => setParameterForm({ ...parameterForm, description: e.target.value })}
-                placeholder="Parametrenin amacını açıklayın"
-                size="lg"
+                onChange={(e) => setParameterForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Parametrenin ne işe yaradığını açıklayın"
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Kategori</Form.Label>
-              <Form.Select
-                value={parameterForm.category}
-                onChange={(e) => setParameterForm({ ...parameterForm, category: e.target.value })}
-                required
-                size="lg"
-              >
-                <option value="general">Genel</option>
-                <option value="financial">Finansal</option>
-                <option value="income">Gelir</option>
-                <option value="expense">Gider</option>
-                <option value="account">Hesap</option>
-                <option value="credit_card">Kredi Kartı</option>
-                <option value="loan">Kredi</option>
-                <option value="notifications">Bildirimler</option>
-                <option value="security">Güvenlik</option>
-                <option value="system">Sistem</option>
-                <option value="localization">Lokalizasyon</option>
-                <option value="reporting">Raporlama</option>
-                <option value="api">API</option>
-                <option value="ai">AI & Otomasyon</option>
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Düzenlenebilir</Form.Label>
-              <Form.Check
-                type="checkbox"
-                checked={parameterForm.is_editable}
-                onChange={(e) => setParameterForm({ ...parameterForm, is_editable: e.target.checked })}
-              />
-            </Form.Group>
-            <div className="d-grid gap-2">
-              <Button
-                type="submit"
-                variant="success"
-                size="lg"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Eklendi...
-                  </>
-                ) : (
-                  '➕ Ekle'
-                )}
-              </Button>
-              <Button variant="secondary" size="lg" onClick={() => setShowAddParameterModal(false)}>
-                ❌ İptal
-              </Button>
-            </div>
           </Form>
         </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAddParameterModal(false)}>
+            İptal
+          </Button>
+          <Button 
+            variant="primary"
+            onClick={async () => {
+              if (!parameterForm.param_key || parameterForm.param_value === undefined) {
+                showMessage('danger', 'Parametre adı ve değeri zorunludur');
+                return;
+              }
+              
+              const success = await addSystemParameter(parameterForm);
+              if (success) {
+                setShowAddParameterModal(false);
+                setParameterForm({
+                  param_key: '',
+                  param_value: '',
+                  param_type: 'string',
+                  description: '',
+                  category: 'general',
+                  is_editable: true,
+                  is_sensitive: false
+                });
+              }
+            }}
+          >
+            <FaSave className="me-2" />
+            Kaydet
+          </Button>
+        </Modal.Footer>
       </Modal>
+    </>
+  );
+
+  // ==================== MAIN RENDER ====================
+  return (
+    <div className="admin-panel-wrapper">
+      {!isAuthenticated ? renderLoginForm() : renderAdminPanel()}
+      
+      {/* Modals */}
+      {renderModals()}
     </div>
   );
 };

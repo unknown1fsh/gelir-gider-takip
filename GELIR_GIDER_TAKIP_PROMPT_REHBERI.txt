@@ -1,0 +1,235 @@
+================================================================================
+GELİR GİDER TAKİP UYGULAMASI - ÖNEMLİ PROMPT REHBERİ
+================================================================================
+
+📁 PROJE BİLGİLERİ:
+- Proje Adı: Gelir Gider Takip
+- Ana Dizin: /c%3A/frontend_projects/gelir-gider-takip
+- Frontend: React.js (client klasörü)
+- Backend: Node.js/Express (server.js)
+- Veritabanı: Neon PostgreSQL
+- Deployment: Vercel
+
+================================================================================
+🔐 VERİTABANI BAĞLANTI BİLGİLERİ
+================================================================================
+
+NEON VERİTABANI BAĞLANTI BİLGİLERİ:
+- DATABASE_URL: postgresql://neondb_owner:npg_JptIgQh2fP5L@ep-winter-river-a2ecm56m-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
+- Host: ep-winter-river-a2ecm56m-pooler.eu-central-1.aws.neon.tech
+- Database: neondb
+- Username: neondb_owner
+- Password: npg_JptIgQh2fP5L
+- SSL Mode: require
+
+VERİTABANI BAĞLANTI PROMPT'U:
+"Neon veritabanıma bağlan ve tabloları kontrol et. DATABASE_URL: postgresql://neondb_owner:npg_JptIgQh2fP5L@ep-winter-river-a2ecm56m-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+
+================================================================================
+🚀 UYGULAMA BAŞLATMA KOMUTLARI
+================================================================================
+
+BACKEND BAŞLATMA:
+"Backend'i başlat: cd /c%3A/frontend_projects/gelir-gider-takip && node server.js"
+
+FRONTEND BAŞLATMA:
+"Frontend'i başlat: cd /c%3A/frontend_projects/gelir-gider-takip/client && npm start"
+
+HER İKİSİNİ BİRLİKTE:
+npm run dev:full
+"Uygulamayı başlat: Backend ve frontend'i aynı anda çalıştır"
+
+================================================================================
+🔧 ADMIN PANEL BİLGİLERİ
+================================================================================
+
+ADMIN ŞİFRE:
+- Admin Password: 12345
+- Kullanıldığı yerler: Admin panel authentication, API middleware
+
+ADMIN PANEL ERİŞİM:
+- URL: http://localhost:3000/admin
+- Admin şifresi: 12345
+- Sistem parametreleri yönetimi mevcut
+
+================================================================================
+📊 MEVCUT TABLOLAR VE YAPILAR
+================================================================================
+
+VERİTABANI TABLOLARI:
+1. users - Kullanıcı bilgileri
+2. accounts - Hesap bilgileri
+3. credit_cards - Kredi kartı bilgileri
+4. incomes - Gelir kayıtları
+5. expenses - Gider kayıtları
+6. loans - Kredi bilgileri
+7. system_parameters - Sistem parametreleri
+8. automatic_payments - Otomatik ödemeler
+9. user_settings - Kullanıcı ayarları
+
+TABLO YAPILARINI GÖRMEK İÇİN:
+"Veritabanı tablolarının yapısını göster ve mevcut verileri listele"
+
+================================================================================
+🎨 FRONTEND BİLEŞENLERİ
+================================================================================
+
+ANA BİLEŞENLER:
+- SidebarNavigation.js - Ana navigasyon
+- Dashboard.js - Ana sayfa
+- AdminPanel.js - Admin paneli
+- Analytics.js - Analiz sayfası
+- AccountForm.js - Hesap formu
+- ExpenseForm.js - Gider formu
+- IncomeForm.js - Gelir formu
+
+CSS DOSYALARI:
+- App.css - Ana stiller
+- Dashboard.css - Dashboard stilleri
+- AdminPanel.css - Admin panel stilleri
+
+================================================================================
+🔗 API ENDPOINT'LERİ
+================================================================================
+
+TEMEL ENDPOINT'LER:
+- GET /api/users - Kullanıcıları listele
+- GET /api/accounts - Hesapları listele
+- GET /api/expenses - Giderleri listele
+- GET /api/incomes - Gelirleri listele
+- GET /api/admin/system-parameters - Sistem parametreleri (admin)
+
+ADMIN ENDPOINT'LERİ:
+- POST /api/admin/system-parameters - Sistem parametresi ekle
+- PUT /api/admin/system-parameters/:id - Sistem parametresi güncelle
+- DELETE /api/admin/system-parameters/:id - Sistem parametresi sil
+
+================================================================================
+🌐 DEPLOYMENT BİLGİLERİ
+================================================================================
+
+VERCEL FULL-STACK DEPLOYMENT (BAŞARILI):
+- Proje: gelir-gider-takip
+- Platform: Vercel
+- Framework: Node.js + React
+- Build Command: npm run vercel-build
+- Yapı: Tek server.js build'i, static serving ile frontend
+- Son Başarılı Link: https://gelir-gider-takip-nix5vjci7-unknown1fshs-projects.vercel.app
+
+KRİTİK DOSYALAR:
+- vercel.json: Tek build, tüm route'lar server.js'e
+- server.js: Static serving + React Router catch-all
+- package.json: CI=false ile ESLint uyarıları kapatıldı
+
+DEPLOYMENT PROMPT'U:
+"Vercel full-stack deployment sorunu var. VERCEL_FULLSTACK_KRITIK_NOTLAR.md dosyasına göre kontrol et ve düzelt."
+
+================================================================================
+🐛 HATA AYIKLAMA
+================================================================================
+
+YAYGIN HATALAR VE ÇÖZÜMLER:
+
+1. Veritabanı Bağlantı Hatası:
+   - Çözüm: DATABASE_URL'yi kontrol et, Neon servisinin aktif olduğunu doğrula
+
+2. Admin Authentication Hatası:
+   - Çözüm: Admin şifresinin "12345" olduğunu kontrol et
+
+3. Frontend Build Hatası:
+   - Çözüm: node_modules'ü sil ve npm install çalıştır
+
+4. Port Çakışması:
+   - Backend: 5000, Frontend: 3000 portlarını kontrol et
+
+HATA AYIKLAMA PROMPT'U:
+"Uygulamada hata var. Hata mesajını analiz et ve çözüm öner"
+
+================================================================================
+📝 GELİŞTİRME İPUÇLARI
+================================================================================
+
+KOD YAZARKEN:
+- Türkçe yanıt ver
+- Dosya yollarını tam olarak belirt
+- Değişiklikleri açıkla
+- Hata durumunda çözüm öner
+
+VERİTABANI İŞLEMLERİ:
+- SQL sorgularını test et
+- Veri bütünlüğünü kontrol et
+- Backup al
+
+FRONTEND GELİŞTİRME:
+- Responsive tasarım kullan
+- Bootstrap bileşenlerini tercih et
+- CSS'te modern stiller kullan
+
+================================================================================
+🔒 GÜVENLİK NOTLARI
+================================================================================
+
+ÖNEMLİ GÜVENLİK BİLGİLERİ:
+- Admin şifresi production'da değiştirilmeli
+- DATABASE_URL environment variable olarak saklanmalı
+- API endpoint'leri authentication ile korunmalı
+- Hassas veriler şifrelenmeli
+
+================================================================================
+📞 ACİL DURUM KONTAKTLARI
+================================================================================
+
+PROJE DOSYALARI:
+- package.json - Bağımlılıklar
+- server.js - Ana backend dosyası
+- client/package.json - Frontend bağımlılıkları
+- vercel.json - Vercel konfigürasyonu
+
+YEDEKLEME:
+- GitHub repository'de kod yedeklenmeli
+- Veritabanı düzenli olarak backup alınmalı
+
+================================================================================
+✅ HAZIR PROMPT'LAR
+================================================================================
+
+1. VERİTABANI BAĞLANTI:
+"Neon veritabanıma bağlan ve tabloları kontrol et. DATABASE_URL: postgresql://neondb_owner:npg_JptIgQh2fP5L@ep-winter-river-a2ecm56m-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+
+2. UYGULAMA BAŞLATMA:
+"Gelir gider takip uygulamasını başlat. Backend: node server.js, Frontend: cd client && npm start"
+
+3. ADMIN PANEL:
+"Admin panelini kontrol et. Şifre: 12345, URL: http://localhost:3000/admin"
+
+4. VERCEL FULL-STACK DEPLOYMENT:
+"Vercel full-stack deployment sorunu var. VERCEL_FULLSTACK_KRITIK_NOTLAR.md dosyasına göre kontrol et ve düzelt."
+
+5. VERCEL 404 HATASI:
+"Vercel deployment'ında 404 hatası alıyorum. vercel.json ve server.js dosyalarını kontrol et ve düzelt."
+
+6. VERCEL ESLINT HATASI:
+"Vercel build'inde ESLint uyarıları hata olarak görünüyor. CI=false ekle ve düzelt."
+
+7. HATA AYIKLAMA:
+"Uygulamada hata var. Hata mesajını analiz et ve çözüm öner"
+
+8. VERİTABANI YEDEKLEME:
+"Veritabanından backup al ve mevcut verileri kontrol et"
+
+9. KOD GÜNCELLEME:
+"Kodda güncelleme yap. Değişiklikleri açıkla ve test et"
+
+================================================================================
+📋 SONUÇ
+================================================================================
+
+Bu rehber dosyası, Gelir Gider Takip uygulamasının geliştirilmesi sırasında 
+kullanılacak önemli bilgileri ve prompt'ları içermektedir. 
+
+Her yeni oturumda bu dosyayı referans olarak kullanarak, 
+tekrar tekrar aynı bilgileri vermenize gerek kalmayacaktır.
+
+Son Güncelleme: [Tarih]
+Versiyon: 1.0
+================================================================================

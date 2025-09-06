@@ -1,0 +1,7 @@
+# Vercel Environment Variables
+# Bu dosyayı Vercel Dashboard'da Environment Variables olarak ekleyin
+
+DATABASE_URL=postgresql://neondb_owner:npg_JptIgQh2fP5L@ep-winter-river-a2ecm56m-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
+JWT_SECRET=b18cd445dda2f037bad52251f8869a0938f2b0d8ea85728c3670e1139ab7a3f27fa3128346e85fa297c92e0e4e2526811eb17ac09b09e790d2edf382a54414fc
+ADMIN_PASSWORD=12345
+NODE_ENV=production

@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { Nav, Dropdown } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaHome, FaPlus, FaList, FaChevronDown, FaChevronRight, FaCreditCard } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaCog, FaUserEdit, FaChartLine, FaHome, FaPlus, FaList, FaCreditCard, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 const SidebarNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   
-  // Akordion state'leri
+  // Accordion state'leri - varsayılan olarak kapalı
   const [expandedSections, setExpandedSections] = useState({
-    dashboard: true,
-    transactions: true,
-    data: true,
-    reports: true
+    dashboard: false,
+    transactions: false,
+    data: false,
+    reports: false
   });
 
   const isActive = (path) => {
@@ -39,7 +39,7 @@ const SidebarNavigation = () => {
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <FaHome className="logo-icon" />
-          <span className="logo-text">💰 Takip Asistanı</span>
+          <span className="logo-text">💰 Takip</span>
         </div>
       </div>
 
@@ -164,33 +164,31 @@ const SidebarNavigation = () => {
 
         <div className="nav-section">
           <div className="nav-section-header" onClick={() => toggleSection('reports')}>
-            <h6 className="nav-section-title">📈 Raporlar</h6>
+            <h6 className="nav-section-title">📈 Analiz & Raporlar</h6>
             <div className="section-toggle">
               {expandedSections.reports ? <FaChevronDown /> : <FaChevronRight />}
             </div>
           </div>
           {expandedSections.reports && (
-            <Nav.Link 
-              as={Link} 
-              to="/analytics" 
-              className={`sidebar-nav-link ${isActive('/analytics') ? 'active' : ''}`}
-            >
-              <FaChartLine className="nav-icon" />
-              <span>Analiz & Raporlar</span>
-            </Nav.Link>
+            <>
+              <Nav.Link 
+                as={Link} 
+                to="/analytics" 
+                className={`sidebar-nav-link ${isActive('/analytics') ? 'active' : ''}`}
+              >
+                <FaChartLine className="nav-icon" />
+                <span>Analiz & Raporlar</span>
+              </Nav.Link>
+              <Nav.Link 
+                as={Link} 
+                to="/admin" 
+                className="sidebar-nav-link admin-panel-link"
+              >
+                <FaCog className="nav-icon" />
+                <span className="admin-panel-text">🛡️ Admin Panel</span>
+              </Nav.Link>
+            </>
           )}
-        </div>
-
-        {/* Admin Panel Butonu */}
-        <div className="nav-section">
-          <Nav.Link 
-            as={Link} 
-            to="/admin" 
-            className="sidebar-nav-link admin-panel-link"
-          >
-            <FaCog className="nav-icon" />
-            <span className="admin-panel-text">🛡️ Admin Panel</span>
-          </Nav.Link>
         </div>
       </Nav>
 
