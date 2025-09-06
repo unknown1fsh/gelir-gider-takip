@@ -469,6 +469,7 @@ const testConnection = async () => {
     
     // Tabloları oluştur
     await createTables();
+    await setupAutomaticPaymentsTables();
     console.log('✅ Veritabanı tabloları hazır');
   } catch (err) {
     console.error('❌ Veritabanı bağlantı hatası:', err);
@@ -2460,6 +2461,268 @@ if (process.env.NODE_ENV === 'production') {
     `);
   });
 }
+
+// Kullanıcı profil endpoint'i
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const result = await query('SELECT * FROM users WHERE user_id = $1', [userId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
+    }
+    
+    const user = result.rows[0];
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Profil getirme hatası:', error);
+    res.status(500).json({ success: false, message: 'Sunucu hatası' });
+  }
+});
+
+// Kullanıcı istatistikleri endpoint'i
+app.get('/api/user/stats', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    
+    // Hesaplar sayısı
+    const accountsResult = await query('SELECT COUNT(*) as count FROM accounts WHERE user_id = $1', [userId]);
+    const totalAccounts = parseInt(accountsResult.rows[0].count);
+    
+    // Gelirler sayısı
+    const incomesResult = await query('SELECT COUNT(*) as count FROM incomes WHERE user_id = $1', [userId]);
+    const totalIncomes = parseInt(incomesResult.rows[0].count);
+    
+    // Giderler sayısı
+    const expensesResult = await query('SELECT COUNT(*) as count FROM expenses WHERE user_id = $1', [userId]);
+    const totalExpenses = parseInt(expensesResult.rows[0].count);
+    
+    // Kredi kartları sayısı
+    const creditCardsResult = await query('SELECT COUNT(*) as count FROM credit_cards WHERE user_id = $1', [userId]);
+    const totalCreditCards = parseInt(creditCardsResult.rows[0].count);
+    
+    // Katılım tarihi
+    const userResult = await query('SELECT created_at FROM users WHERE user_id = $1', [userId]);
+    const joinDate = userResult.rows[0]?.created_at;
+    
+    res.json({
+      success: true,
+      totalAccounts,
+      totalIncomes,
+      totalExpenses,
+      totalCreditCards,
+      joinDate
+    });
+  } catch (error) {
+    console.error('İstatistik getirme hatası:', error);
+    res.status(500).json({ success: false, message: 'Sunucu hatası' });
+  }
+});
+
+// Verileri sıfırlama endpoint'i
+app.post('/api/user/reset-data', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    
+    console.log(`🔄 [${new Date().toISOString()}] Kullanıcı ${userId} verilerini sıfırlıyor...`);
+    
+    // Tüm kullanıcı verilerini sil
+    await query('DELETE FROM rent_expenses WHERE user_id = $1', [userId]);
+    await query('DELETE FROM expenses WHERE user_id = $1', [userId]);
+    await query('DELETE FROM incomes WHERE user_id = $1', [userId]);
+    await query('DELETE FROM credit_cards WHERE user_id = $1', [userId]);
+    await query('DELETE FROM accounts WHERE user_id = $1', [userId]);
+    
+    console.log(`✅ [${new Date().toISOString()}] Kullanıcı ${userId} verileri başarıyla sıfırlandı`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Tüm verileriniz başarıyla sıfırlandı!' 
+    });
+  } catch (error) {
+    console.error('Veri sıfırlama hatası:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Veriler sıfırlanırken hata oluştu' 
+    });
+  }
+});
+
+// Automatic Payments Database Setup
+const setupAutomaticPaymentsTables = async () => {
+  try {
+    // Automatic Payment Categories Table
+    await query(`
+      CREATE TABLE IF NOT EXISTS automatic_payment_categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        icon VARCHAR(10) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Automatic Payments Table
+    await query(`
+      CREATE TABLE IF NOT EXISTS automatic_payments (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+        category_id INTEGER REFERENCES automatic_payment_categories(id),
+        title VARCHAR(200) NOT NULL,
+        description TEXT,
+        amount DECIMAL(15,2) NOT NULL,
+        currency VARCHAR(3) DEFAULT 'TRY',
+        frequency_type VARCHAR(20) NOT NULL,
+        frequency_value INTEGER NOT NULL DEFAULT 1,
+        start_date DATE NOT NULL,
+        end_date DATE,
+        next_payment_date DATE,
+        account_type VARCHAR(20) NOT NULL,
+        account_id INTEGER NOT NULL,
+        auto_execute BOOLEAN DEFAULT false,
+        reminder_days INTEGER DEFAULT 3,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default categories if they don't exist
+    const categoryCheck = await query('SELECT COUNT(*) FROM automatic_payment_categories');
+    if (parseInt(categoryCheck.rows[0].count) === 0) {
+      const defaultCategories = [
+        { name: 'Ev Kirası', icon: '🏠', description: 'Ev kirası ödemeleri' },
+        { name: 'Elektrik', icon: '⚡', description: 'Elektrik faturası' },
+        { name: 'Su', icon: '💧', description: 'Su faturası' },
+        { name: 'Doğalgaz', icon: '🔥', description: 'Doğalgaz faturası' },
+        { name: 'İnternet', icon: '🌐', description: 'İnternet faturası' },
+        { name: 'Telefon', icon: '📱', description: 'Telefon faturası' },
+        { name: 'Kredi Kartı', icon: '💳', description: 'Kredi kartı ödemeleri' },
+        { name: 'Sigorta', icon: '🛡️', description: 'Sigorta ödemeleri' },
+        { name: 'Vergi', icon: '📋', description: 'Vergi ödemeleri' },
+        { name: 'Diğer', icon: '📄', description: 'Diğer ödemeler' }
+      ];
+
+      for (const category of defaultCategories) {
+        await query(`
+          INSERT INTO automatic_payment_categories (name, icon, description) 
+          VALUES ($1, $2, $3)
+        `, [category.name, category.icon, category.description]);
+      }
+    }
+
+    console.log('✅ Automatic payments tabloları hazır');
+  } catch (error) {
+    console.error('❌ Automatic payments tablo kurulum hatası:', error);
+  }
+};
+
+// Automatic Payments API Endpoints
+app.get('/api/automatic-payments', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const result = await query(`
+      SELECT ap.*, apc.name as category_name, apc.icon as category_icon
+      FROM automatic_payments ap
+      LEFT JOIN automatic_payment_categories apc ON ap.category_id = apc.id
+      WHERE ap.user_id = $1
+      ORDER BY ap.created_at DESC
+    `, [userId]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Otomatik ödemeler getirme hatası:', error);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+app.get('/api/automatic-payment-categories', authenticateToken, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT * FROM automatic_payment_categories 
+      ORDER BY name
+    `);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Kategoriler getirme hatası:', error);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+app.get('/api/automatic-payments/summary', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    
+    const totalResult = await query(`
+      SELECT COUNT(*) as total_payments 
+      FROM automatic_payments 
+      WHERE user_id = $1
+    `, [userId]);
+    
+    const activeResult = await query(`
+      SELECT COUNT(*) as active_payments 
+      FROM automatic_payments 
+      WHERE user_id = $1 AND is_active = true
+    `, [userId]);
+    
+    const dueSoonResult = await query(`
+      SELECT COUNT(*) as due_soon_payments 
+      FROM automatic_payments 
+      WHERE user_id = $1 AND is_active = true 
+      AND next_payment_date <= CURRENT_DATE + INTERVAL '7 days'
+    `, [userId]);
+    
+    const overdueResult = await query(`
+      SELECT COUNT(*) as overdue_payments 
+      FROM automatic_payments 
+      WHERE user_id = $1 AND is_active = true 
+      AND next_payment_date < CURRENT_DATE
+    `, [userId]);
+    
+    res.json({
+      total_payments: parseInt(totalResult.rows[0].total_payments),
+      active_payments: parseInt(activeResult.rows[0].active_payments),
+      due_soon_payments: parseInt(dueSoonResult.rows[0].due_soon_payments),
+      overdue_payments: parseInt(overdueResult.rows[0].overdue_payments)
+    });
+  } catch (error) {
+    console.error('Özet getirme hatası:', error);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+app.get('/api/user-accounts', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const result = await query(`
+      SELECT * FROM accounts 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC
+    `, [userId]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Hesaplar getirme hatası:', error);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+app.get('/api/user-credit-cards', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const result = await query(`
+      SELECT * FROM credit_cards 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC
+    `, [userId]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Kredi kartları getirme hatası:', error);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
 
 // React Router için catch-all route
 app.get('*', (req, res) => {

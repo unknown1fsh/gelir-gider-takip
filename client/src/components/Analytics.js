@@ -74,8 +74,24 @@ const Analytics = () => {
       setCreditCards(creditCardsResponse.data || []);
       
     } catch (error) {
-      setError('Veriler yüklenirken hata oluştu');
       console.error('Veri yükleme hatası:', error);
+      // Sadece gerçek hata durumlarında mesaj göster
+      if (error.response?.status !== 404) {
+        setError('Veriler yüklenirken hata oluştu');
+      }
+      // Hata durumunda boş veriler ayarla
+      setAnalytics({
+        totalIncome: 0,
+        totalExpense: 0,
+        netIncome: 0,
+        savingsRate: 0,
+        incomeDistribution: {},
+        expenseDistribution: {}
+      });
+      setIncomes([]);
+      setExpenses([]);
+      setAccounts([]);
+      setCreditCards([]);
     } finally {
       setLoading(false);
     }

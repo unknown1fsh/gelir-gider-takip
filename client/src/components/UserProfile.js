@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Container, Row, Col, Card, Form, Button, 
   Alert, Image, Tabs, Tab,
-  Modal, Spinner
+  Modal, Spinner, Badge, ProgressBar
 } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -10,7 +10,10 @@ import BackButton from './BackButton';
 import { 
   FaUser, FaShieldAlt, FaKey, FaEdit,
   FaSave, FaTimes, FaTrash,
-  FaDownload, FaCog, FaPalette
+  FaDownload, FaCog, FaPalette,
+  FaExclamationTriangle, FaUndo, FaCheckCircle,
+  FaChartLine, FaWallet, FaCreditCard, FaHome,
+  FaBell, FaGlobe, FaMoon, FaSun
 } from 'react-icons/fa';
 import './UserProfile.css';
 
@@ -56,10 +59,20 @@ const UserProfile = () => {
   // Modal durumları
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   
   // Avatar yükleme
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  
+  // Kullanıcı istatistikleri
+  const [userStats, setUserStats] = useState({
+    totalAccounts: 0,
+    totalIncomes: 0,
+    totalExpenses: 0,
+    totalCreditCards: 0,
+    joinDate: null
+  });
 
   useEffect(() => {
     if (user) {
@@ -72,8 +85,18 @@ const UserProfile = () => {
         bio: user.bio || '',
         avatar: user.avatar || null
       });
+      fetchUserStats();
     }
   }, [user]);
+
+  const fetchUserStats = async () => {
+    try {
+      const response = await axios.get('/api/user/stats');
+      setUserStats(response.data);
+    } catch (error) {
+      console.error('İstatistikler yüklenirken hata:', error);
+    }
+  };
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -238,6 +261,29 @@ const UserProfile = () => {
     }
   };
 
+  const resetAllData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/user/reset-data');
+      
+      if (response.data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: 'Tüm verileriniz başarıyla sıfırlandı!' 
+        });
+        setShowResetModal(false);
+        fetchUserStats(); // İstatistikleri yenile
+      }
+    } catch (error) {
+      setMessage({ 
+        type: 'danger', 
+        text: error.response?.data?.message || 'Veriler sıfırlanırken hata oluştu' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
@@ -308,20 +354,26 @@ const UserProfile = () => {
                 <Row>
                   <Col>
                     <div className="stat-item">
-                      <h5>0</h5>
-                      <small>Hesap</small>
+                      <h5>{userStats.totalAccounts}</h5>
+                      <small><FaWallet className="me-1" />Hesap</small>
                     </div>
                   </Col>
                   <Col>
                     <div className="stat-item">
-                      <h5>0</h5>
-                      <small>Gelir</small>
+                      <h5>{userStats.totalIncomes}</h5>
+                      <small><FaChartLine className="me-1" />Gelir</small>
                     </div>
                   </Col>
                   <Col>
                     <div className="stat-item">
-                      <h5>0</h5>
-                      <small>Gider</small>
+                      <h5>{userStats.totalExpenses}</h5>
+                      <small><FaHome className="me-1" />Gider</small>
+                    </div>
+                  </Col>
+                  <Col>
+                    <div className="stat-item">
+                      <h5>{userStats.totalCreditCards}</h5>
+                      <small><FaCreditCard className="me-1" />Kart</small>
                     </div>
                   </Col>
                 </Row>
@@ -621,6 +673,41 @@ const UserProfile = () => {
                     />
                   </Form.Group>
                   
+                  {/* Veri Yönetimi Bölümü */}
+                  <Card className="mb-4 border-warning">
+                    <Card.Header className="bg-warning text-dark">
+                      <h6 className="mb-0">
+                        <FaExclamationTriangle className="me-2" />
+                        Veri Yönetimi
+                      </h6>
+                    </Card.Header>
+                    <Card.Body>
+                      <Alert variant="warning" className="mb-3">
+                        <FaExclamationTriangle className="me-2" />
+                        <strong>Dikkat!</strong> Bu işlemler geri alınamaz. Lütfen dikkatli olun.
+                      </Alert>
+                      
+                      <div className="d-grid gap-2">
+                        <Button
+                          variant="outline-danger"
+                          onClick={() => setShowResetModal(true)}
+                          className="reset-data-btn"
+                        >
+                          <FaUndo className="me-2" />
+                          Tüm Verileri Sıfırla
+                        </Button>
+                        
+                        <Button
+                          variant="outline-secondary"
+                          onClick={exportUserData}
+                        >
+                          <FaDownload className="me-2" />
+                          Verileri Dışa Aktar
+                        </Button>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                  
                   <div className="d-flex justify-content-end">
                     <Button
                       variant="primary"
@@ -710,6 +797,88 @@ const UserProfile = () => {
               <FaTrash className="me-2" />
             )}
             Hesabı Sil
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Verileri Sıfırlama Modal */}
+      <Modal show={showResetModal} onHide={() => setShowResetModal(false)} size="lg">
+        <Modal.Header closeButton className="bg-danger text-white">
+          <Modal.Title>
+            <FaExclamationTriangle className="me-2" />
+            Verileri Sıfırla
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="danger" className="mb-4">
+            <FaExclamationTriangle className="me-2" />
+            <strong>UYARI!</strong> Bu işlem geri alınamaz!
+          </Alert>
+          
+          <div className="reset-warning-content">
+            <h6 className="text-danger mb-3">Silinecek Veriler:</h6>
+            <ul className="list-unstyled">
+              <li className="mb-2">
+                <FaWallet className="text-primary me-2" />
+                <strong>Tüm Hesaplar</strong> - Banka hesapları ve nakit hesapları
+              </li>
+              <li className="mb-2">
+                <FaChartLine className="text-success me-2" />
+                <strong>Tüm Gelirler</strong> - Maaş, kira geliri ve diğer gelirler
+              </li>
+              <li className="mb-2">
+                <FaHome className="text-warning me-2" />
+                <strong>Tüm Giderler</strong> - Ev kirası, faturalar ve diğer giderler
+              </li>
+              <li className="mb-2">
+                <FaCreditCard className="text-info me-2" />
+                <strong>Tüm Kredi Kartları</strong> - Kart bilgileri ve limitler
+              </li>
+              <li className="mb-2">
+                <FaChartLine className="text-secondary me-2" />
+                <strong>Tüm Analiz Verileri</strong> - Grafikler ve raporlar
+              </li>
+            </ul>
+            
+            <div className="mt-4 p-3 bg-light rounded">
+              <h6 className="text-success mb-2">
+                <FaCheckCircle className="me-2" />
+                Korunacak Veriler:
+              </h6>
+              <ul className="list-unstyled mb-0">
+                <li>• Profil bilgileriniz</li>
+                <li>• Hesap ayarlarınız</li>
+                <li>• Güvenlik ayarlarınız</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <Form.Check
+              type="checkbox"
+              id="confirmReset"
+              label="Tüm verilerimin silineceğini anlıyorum ve onaylıyorum"
+              className="text-danger fw-bold"
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowResetModal(false)}>
+            <FaTimes className="me-2" />
+            İptal
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={resetAllData} 
+            disabled={loading}
+            className="px-4"
+          >
+            {loading ? (
+              <Spinner animation="border" size="sm" className="me-2" />
+            ) : (
+              <FaUndo className="me-2" />
+            )}
+            Tüm Verileri Sıfırla
           </Button>
         </Modal.Footer>
       </Modal>

@@ -236,7 +236,11 @@ const SidebarNavigation = () => {
               Profil
             </Dropdown.Item>
             
-            <Dropdown.Item className="dropdown-item">
+            <Dropdown.Item 
+              as={Link} 
+              to="/profile" 
+              className="dropdown-item"
+            >
               <FaCog className="dropdown-icon" />
               Ayarlar
             </Dropdown.Item>

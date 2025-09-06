@@ -44,10 +44,35 @@ const Dashboard = () => {
       const response = await axios.get('/api/dashboard');
       if (response.data.success) {
         setDashboardData(response.data.dashboard);
+      } else {
+        // Veri yoksa boş dashboard göster
+        setDashboardData({
+          totalIncome: 0,
+          totalExpense: 0,
+          netIncome: 0,
+          savingsRate: 0,
+          recentTransactions: [],
+          upcomingPayments: [],
+          creditCardUsage: []
+        });
       }
     } catch (error) {
-      setError('Dashboard verileri yüklenirken hata oluştu');
       console.error('Dashboard hatası:', error);
+      // Sadece gerçek hata durumlarında mesaj göster
+      if (error.response?.status !== 404) {
+        setError('Dashboard verileri yüklenirken hata oluştu');
+      } else {
+        // 404 durumunda boş dashboard göster
+        setDashboardData({
+          totalIncome: 0,
+          totalExpense: 0,
+          netIncome: 0,
+          savingsRate: 0,
+          recentTransactions: [],
+          upcomingPayments: [],
+          creditCardUsage: []
+        });
+      }
     } finally {
       setLoading(false);
     }

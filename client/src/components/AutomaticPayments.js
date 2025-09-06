@@ -70,14 +70,53 @@ const AutomaticPayments = () => {
         fetch('/api/user-credit-cards')
       ]);
 
-      if (paymentsRes.ok) setPayments(await paymentsRes.json());
-      if (categoriesRes.ok) setCategories(await categoriesRes.json());
-      // if (templatesRes.ok) setTemplates(await templatesRes.json());
-      if (summaryRes.ok) setSummary(await summaryRes.json());
-      if (accountsRes.ok) setUserAccounts(await accountsRes.json());
-      if (creditCardsRes.ok) setUserCreditCards(await creditCardsRes.json());
+      // Veri yoksa boş array olarak ayarla, hata mesajı gösterme
+      if (paymentsRes.ok) {
+        const paymentsData = await paymentsRes.json();
+        setPayments(Array.isArray(paymentsData) ? paymentsData : []);
+      } else {
+        setPayments([]);
+      }
+
+      if (categoriesRes.ok) {
+        const categoriesData = await categoriesRes.json();
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      } else {
+        setCategories([]);
+      }
+
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        setSummary(summaryData || {});
+      } else {
+        setSummary({});
+      }
+
+      if (accountsRes.ok) {
+        const accountsData = await accountsRes.json();
+        setUserAccounts(Array.isArray(accountsData) ? accountsData : []);
+      } else {
+        setUserAccounts([]);
+      }
+
+      if (creditCardsRes.ok) {
+        const creditCardsData = await creditCardsRes.json();
+        setUserCreditCards(Array.isArray(creditCardsData) ? creditCardsData : []);
+      } else {
+        setUserCreditCards([]);
+      }
     } catch (error) {
-      setMessage({ type: 'danger', text: 'Veriler yüklenirken hata oluştu' });
+      console.error('Veri yükleme hatası:', error);
+      // Sadece gerçek hata durumlarında mesaj göster
+      if (error.message && !error.message.includes('404')) {
+        setMessage({ type: 'danger', text: 'Veriler yüklenirken hata oluştu' });
+      }
+      // Hata durumunda boş veriler ayarla
+      setPayments([]);
+      setCategories([]);
+      setSummary({});
+      setUserAccounts([]);
+      setUserCreditCards([]);
     }
     setLoading(false);
   };
