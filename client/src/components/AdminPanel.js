@@ -37,7 +37,8 @@ import {
   FaUserInjured, FaUserCheck, FaUserTimes, 
   FaUserPlus, FaUserMinus, FaUserEdit, FaUserLock,
   FaUserUnlock, FaUserClock, FaUserTag, 
-  FaUserFriends, FaSignInAlt, FaSignOutAlt
+  FaUserFriends, FaSignInAlt, FaSignOutAlt,
+  FaBuilding, FaCreditCard
 } from 'react-icons/fa';
 
 const AdminPanel = () => {
@@ -356,7 +357,19 @@ const AdminPanel = () => {
         const data = await response.json();
         setDashboardData(prev => ({
           ...prev,
-          stats: { ...prev.stats, ...data.dashboard }
+          stats: { 
+            ...prev.stats, 
+            ...data.dashboard,
+            // Sistem performansı verilerini de ekle
+            systemUptime: data.dashboard.systemUptime || 0,
+            memoryUsage: data.dashboard.memoryUsage || 0,
+            cpuUsage: data.dashboard.cpuUsage || 0,
+            diskUsage: data.dashboard.diskUsage || 0,
+            activeSessions: data.dashboard.activeSessions || 0,
+            errorRate: data.dashboard.errorRate || 0,
+            responseTime: data.dashboard.responseTime || 0
+          },
+          recentActivities: data.dashboard.recentActivities || []
         }));
       }
     } catch (error) {
@@ -388,8 +401,36 @@ const AdminPanel = () => {
   };
 
   // Banks Management
+  const addBank = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/banks', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          bank_name: newBankName.trim(),
+          adminPassword: adminPassword
+        })
+      });
+      
+      if (response.ok) {
+        showMessage('success', 'Banka başarıyla eklendi!');
+        setNewBankName('');
+        fetchBanks(); // Listeyi yenile
+      } else {
+        const error = await response.json();
+        showMessage('danger', error.error || 'Banka eklenirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Banka ekleme hatası:', error);
+      showMessage('danger', 'Banka eklenirken bağlantı hatası oluştu');
+    }
+  };
+
   const fetchBanks = async () => {
     try {
+      console.log('🔍 Bankalar yükleniyor...');
       const response = await fetch('http://localhost:5000/api/banks', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
@@ -397,11 +438,16 @@ const AdminPanel = () => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Bankalar yüklendi:', data.length, 'adet');
         setBanks(data);
         setFilteredBanks(data);
+      } else {
+        console.error('❌ Bankalar yüklenemedi:', response.status);
+        showMessage('danger', 'Bankalar yüklenirken hata oluştu');
       }
     } catch (error) {
-      console.error('Bankalar getirme hatası:', error);
+      console.error('❌ Bankalar getirme hatası:', error);
+      showMessage('danger', 'Bankalar yüklenirken bağlantı hatası oluştu');
     }
   };
 
@@ -765,80 +811,89 @@ const AdminPanel = () => {
   // Main Admin Panel
   const renderAdminPanel = () => (
     <div className={`admin-panel ${darkMode ? 'dark-mode' : ''} ${fullscreen ? 'fullscreen' : ''}`}>
-      {/* Top Navigation */}
-      <Navbar bg="dark" variant="dark" expand="lg" className="admin-navbar">
-        <Container fluid>
-          <Navbar.Brand>
+      {/* Left Sidebar Navigation */}
+      <div className="admin-sidebar">
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
             <FaCrown className="me-2" />
             Admin Panel
-          </Navbar.Brand>
-          
-          <Navbar.Toggle 
-            aria-controls="admin-navbar-nav"
+          </div>
+          <Button 
+            variant="link" 
+            className="sidebar-toggle d-lg-none"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          />
+          >
+            <FaBars />
+          </Button>
+        </div>
+        
+        <div className={`sidebar-content ${mobileMenuOpen ? 'show' : ''}`}>
+          <Nav className="flex-column">
+            <Nav.Link 
+              className={`sidebar-nav-link ${activeSection === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveSection('dashboard')}
+            >
+              <FaChartBar className="me-2" />
+              Dashboard
+            </Nav.Link>
+            <Nav.Link 
+              className={`sidebar-nav-link ${activeSection === 'users' ? 'active' : ''}`}
+              onClick={() => setActiveSection('users')}
+            >
+              <FaUsers className="me-2" />
+              Kullanıcılar
+            </Nav.Link>
+            <Nav.Link 
+              className={`sidebar-nav-link ${activeSection === 'system' ? 'active' : ''}`}
+              onClick={() => setActiveSection('system')}
+            >
+              <FaCog className="me-2" />
+              Sistem
+            </Nav.Link>
+          </Nav>
           
-          <Navbar.Collapse id="admin-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link 
-                active={activeSection === 'dashboard'}
-                onClick={() => setActiveSection('dashboard')}
+          <div className="sidebar-footer">
+            <div className="sidebar-controls">
+              <Button 
+                variant="link" 
+                className="sidebar-control-btn"
+                onClick={() => setDarkMode(!darkMode)}
+                title={darkMode ? 'Açık Tema' : 'Koyu Tema'}
               >
-                <FaChartBar className="me-1" />
-                Dashboard
-              </Nav.Link>
-              <Nav.Link 
-                active={activeSection === 'users'}
-                onClick={() => setActiveSection('users')}
-              >
-                <FaUsers className="me-1" />
-                Kullanıcılar
-              </Nav.Link>
-              <Nav.Link 
-                active={activeSection === 'banks'}
-                onClick={() => setActiveSection('banks')}
-              >
-                <FaDatabase className="me-1" />
-                Bankalar
-              </Nav.Link>
-              <Nav.Link 
-                active={activeSection === 'system'}
-                onClick={() => setActiveSection('system')}
-              >
-                <FaCog className="me-1" />
-                Sistem
-              </Nav.Link>
-            </Nav>
-            
-            <Nav>
-              <Nav.Link onClick={() => setDarkMode(!darkMode)}>
                 {darkMode ? <FaSun /> : <FaMoon />}
-              </Nav.Link>
-              <Nav.Link onClick={() => setFullscreen(!fullscreen)}>
+              </Button>
+              <Button 
+                variant="link" 
+                className="sidebar-control-btn"
+                onClick={() => setFullscreen(!fullscreen)}
+                title={fullscreen ? 'Tam Ekranı Kapat' : 'Tam Ekran'}
+              >
                 {fullscreen ? <FaCompress /> : <FaExpand />}
-              </Nav.Link>
-              <Dropdown>
-                <Dropdown.Toggle variant="outline-light" id="admin-dropdown">
-                  <FaUserCog />
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => setShowSettingsModal(true)}>
-                    <FaCog className="me-2" />
-                    Ayarlar
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => setIsAuthenticated(false)}>
-                    <FaSignOutAlt className="me-2" />
-                    Çıkış
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+              </Button>
+            </div>
+            
+            <Dropdown>
+              <Dropdown.Toggle variant="outline-light" id="admin-dropdown" className="sidebar-dropdown">
+                <FaUserCog className="me-2" />
+                Admin
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={() => setShowSettingsModal(true)}>
+                  <FaCog className="me-2" />
+                  Ayarlar
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setIsAuthenticated(false)}>
+                  <FaSignOutAlt className="me-2" />
+                  Çıkış
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
-      <Container fluid className="admin-content">
+      <div className="admin-main-content">
         {message.text && (
           <Alert 
             variant={message.type} 
@@ -856,12 +911,9 @@ const AdminPanel = () => {
         {/* Users Section */}
         {activeSection === 'users' && renderUsersManagement()}
         
-        {/* Banks Section */}
-        {activeSection === 'banks' && renderBanksManagement()}
-        
         {/* System Section */}
         {activeSection === 'system' && renderSystemManagement()}
-      </Container>
+      </div>
     </div>
   );
 
@@ -1015,17 +1067,49 @@ const AdminPanel = () => {
             <Card.Body>
               <ListGroup variant="flush">
                 {dashboardData.recentActivities.length > 0 ? (
-                  dashboardData.recentActivities.map((activity, index) => (
-                    <ListGroupItem key={index} className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <FaUserClock className="me-2 text-muted" />
-                        {activity.description}
-                      </div>
-                      <small className="text-muted">{formatDate(activity.timestamp)}</small>
-                    </ListGroupItem>
-                  ))
+                  dashboardData.recentActivities.map((activity, index) => {
+                    // Aktivite tipine göre ikon belirle
+                    let activityIcon;
+                    let activityColor = 'text-muted';
+                    
+                    switch (activity.type) {
+                      case 'income':
+                        activityIcon = <FaArrowUp className="text-success" />;
+                        activityColor = 'text-success';
+                        break;
+                      case 'expense':
+                        activityIcon = <FaArrowDown className="text-danger" />;
+                        activityColor = 'text-danger';
+                        break;
+                      case 'account':
+                        activityIcon = <FaDatabase className="text-primary" />;
+                        activityColor = 'text-primary';
+                        break;
+                      case 'credit_card':
+                        activityIcon = <FaCreditCard className="text-info" />;
+                        activityColor = 'text-info';
+                        break;
+                      case 'bank':
+                        activityIcon = <FaBuilding className="text-warning" />;
+                        activityColor = 'text-warning';
+                        break;
+                      default:
+                        activityIcon = <FaUserClock className="text-muted" />;
+                    }
+                    
+                    return (
+                      <ListGroupItem key={index} className="d-flex justify-content-between align-items-center">
+                        <div className="d-flex align-items-center">
+                          <span className="me-2">{activityIcon}</span>
+                          <span className={activityColor}>{activity.description}</span>
+                        </div>
+                        <small className="text-muted">{formatDate(activity.timestamp)}</small>
+                      </ListGroupItem>
+                    );
+                  })
                 ) : (
                   <ListGroupItem className="text-center text-muted">
+                    <FaInfoCircle className="me-2" />
                     Henüz aktivite bulunmuyor
                   </ListGroupItem>
                 )}
@@ -1156,74 +1240,6 @@ const AdminPanel = () => {
     </div>
   );
 
-  // Banks Management Section
-  const renderBanksManagement = () => (
-    <div className="banks-section">
-      <Row className="mb-4">
-        <Col>
-          <h2><FaDatabase className="me-2" />Banka Yönetimi</h2>
-          <p className="text-muted">Sistem bankalarını yönetin</p>
-        </Col>
-      </Row>
-
-      {/* Add New Bank */}
-      <Row className="mb-4">
-        <Col md={6}>
-          <InputGroup>
-            <FormControl
-              placeholder="Yeni banka adı..."
-              value={newBankName}
-              onChange={(e) => setNewBankName(e.target.value)}
-            />
-            <Button variant="success" onClick={() => {
-              // Add bank logic
-              showMessage('success', 'Banka eklendi!');
-              setNewBankName('');
-            }}>
-              <FaPlus className="me-2" />
-              Ekle
-            </Button>
-          </InputGroup>
-        </Col>
-      </Row>
-
-      {/* Banks Table */}
-      <Card>
-        <Card.Body>
-          <Table responsive striped hover>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Banka Adı</th>
-                <th>Oluşturulma Tarihi</th>
-                <th>İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBanks.map(bank => (
-                <tr key={bank.id}>
-                  <td>{bank.id}</td>
-                  <td>{bank.bank_name}</td>
-                  <td>{formatDate(bank.created_at)}</td>
-                  <td>
-                    <ButtonGroup size="sm">
-                      <Button variant="outline-warning" size="sm">
-                        <FaEdit />
-                      </Button>
-                      <Button variant="outline-danger" size="sm">
-                        <FaTrash />
-                      </Button>
-                    </ButtonGroup>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
-    </div>
-  );
-
   // System Management Section
   const renderSystemManagement = () => (
     <div className="system-section">
@@ -1327,34 +1343,54 @@ const AdminPanel = () => {
                     <Accordion>
                       {(() => {
                         const categories = {};
+                        
+                        // Parametreleri kategorilere ekle
                         filteredParameters.forEach(param => {
                           if (!categories[param.category]) {
-                            categories[param.category] = [];
+                            categories[param.category] = { parameters: [], banks: [] };
                           }
-                          categories[param.category].push(param);
+                          categories[param.category].parameters.push(param);
                         });
                         
-                        return Object.entries(categories).map(([category, params], index) => (
+                        // Bankaları 'financial' kategorisine ekle
+                        if (banks.length > 0) {
+                          if (!categories['financial']) {
+                            categories['financial'] = { parameters: [], banks: [] };
+                          }
+                          categories['financial'].banks = banks;
+                        }
+                        
+                        return Object.entries(categories).map(([category, data], index) => (
                           <Accordion.Item key={category} eventKey={index.toString()}>
                             <Accordion.Header>
                               <Badge bg="info" className="me-2">{category}</Badge>
                               <span className="fw-bold">{category.charAt(0).toUpperCase() + category.slice(1)}</span>
-                              <Badge bg="secondary" className="ms-2">{params.length} parametre</Badge>
+                              <Badge bg="secondary" className="ms-2">
+                                {data.parameters.length} parametre
+                                {data.banks.length > 0 && `, ${data.banks.length} banka`}
+                              </Badge>
                             </Accordion.Header>
                             <Accordion.Body>
-                              <div className="table-responsive">
-                                <Table size="sm" striped>
-                                  <thead>
-                                    <tr>
-                                      <th>Anahtar</th>
-                                      <th>Değer</th>
-                                      <th>Tip</th>
-                                      <th>Açıklama</th>
-                                      <th>İşlemler</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {params.map(param => (
+                              {/* Parametreler */}
+                              {data.parameters.length > 0 && (
+                                <div className="mb-4">
+                                  <h6 className="mb-3">
+                                    <FaCog className="me-2" />
+                                    Sistem Parametreleri
+                                  </h6>
+                                  <div className="table-responsive">
+                                    <Table size="sm" striped>
+                                      <thead>
+                                        <tr>
+                                          <th>Anahtar</th>
+                                          <th>Değer</th>
+                                          <th>Tip</th>
+                                          <th>Açıklama</th>
+                                          <th>İşlemler</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {data.parameters.map(param => (
                                       <tr key={param.id}>
                                         <td>
                                           <div>
@@ -1426,10 +1462,183 @@ const AdminPanel = () => {
                                           </ButtonGroup>
                                         </td>
                                       </tr>
-                                    ))}
-                                  </tbody>
-                                </Table>
-                              </div>
+                                        ))}
+                                      </tbody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Bankalar */}
+                              {data.banks.length > 0 && (
+                                <div className="mb-4">
+                                  <h6 className="mb-3">
+                                    <FaDatabase className="me-2" />
+                                    Banka Yönetimi
+                                  </h6>
+                                  
+                                  {/* Banka Ekleme */}
+                                  <Row className="mb-3">
+                                    <Col md={8}>
+                                      <InputGroup>
+                                        <FormControl
+                                          placeholder="Yeni banka adı..."
+                                          value={newBankName}
+                                          onChange={(e) => {
+                                            setNewBankName(e.target.value);
+                                            // Gerçek zamanlı aynı isim kontrolü
+                                            if (e.target.value.trim()) {
+                                              const existingBank = banks.find(bank => 
+                                                bank.bank_name.toLowerCase() === e.target.value.trim().toLowerCase()
+                                              );
+                                              if (existingBank) {
+                                                // Input'a kırmızı border ekle
+                                                e.target.style.borderColor = '#dc3545';
+                                                e.target.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                                              } else {
+                                                // Normal border
+                                                e.target.style.borderColor = '';
+                                                e.target.style.boxShadow = '';
+                                              }
+                                            } else {
+                                              e.target.style.borderColor = '';
+                                              e.target.style.boxShadow = '';
+                                            }
+                                          }}
+                                          onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              // Enter tuşu ile banka ekleme
+                                              if (!newBankName.trim()) {
+                                                showMessage('danger', 'Banka adı boş olamaz');
+                                                return;
+                                              }
+                                              
+                                              // Frontend'de aynı isim kontrolü
+                                              const existingBank = banks.find(bank => 
+                                                bank.bank_name.toLowerCase() === newBankName.trim().toLowerCase()
+                                              );
+                                              
+                                              if (existingBank) {
+                                                showMessage('warning', `"${newBankName.trim()}" bankası zaten mevcut!`);
+                                                return;
+                                              }
+                                              
+                                              // Banka ekleme işlemi
+                                              addBank();
+                                            }
+                                          }}
+                                        />
+                                        <Button 
+                                          variant="success" 
+                                          disabled={!newBankName.trim() || banks.some(bank => 
+                                            bank.bank_name.toLowerCase() === newBankName.trim().toLowerCase()
+                                          )}
+                                          onClick={async () => {
+                                            if (!newBankName.trim()) {
+                                              showMessage('danger', 'Banka adı boş olamaz');
+                                              return;
+                                            }
+                                            
+                                            // Frontend'de aynı isim kontrolü
+                                            const existingBank = banks.find(bank => 
+                                              bank.bank_name.toLowerCase() === newBankName.trim().toLowerCase()
+                                            );
+                                            
+                                            if (existingBank) {
+                                              showMessage('warning', `"${newBankName.trim()}" bankası zaten mevcut!`);
+                                              return;
+                                            }
+                                            
+                                            await addBank();
+                                          }}
+                                        >
+                                          <FaPlus className="me-2" />
+                                          Ekle
+                                        </Button>
+                                      </InputGroup>
+                                    </Col>
+                                    <Col md={4}>
+                                      <Button 
+                                        variant="outline-primary" 
+                                        size="sm" 
+                                        onClick={fetchBanks}
+                                        className="w-100"
+                                      >
+                                        <FaSync className="me-2" />
+                                        Yenile
+                                      </Button>
+                                    </Col>
+                                  </Row>
+                                  
+                                  {/* Bankalar Tablosu */}
+                                  <div className="table-responsive">
+                                    <Table size="sm" striped hover>
+                                      <thead>
+                                        <tr>
+                                          <th>ID</th>
+                                          <th>Banka Adı</th>
+                                          <th>Oluşturulma Tarihi</th>
+                                          <th>İşlemler</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {data.banks.map(bank => (
+                                          <tr key={bank.id}>
+                                            <td>{bank.id}</td>
+                                            <td>
+                                              <div className="d-flex align-items-center">
+                                                <FaBuilding className="me-2 text-primary" />
+                                                <span className="fw-medium">{bank.bank_name}</span>
+                                              </div>
+                                            </td>
+                                            <td>{formatDate(bank.created_at)}</td>
+                                            <td>
+                                              <ButtonGroup size="sm">
+                                                <Button variant="outline-warning" size="sm">
+                                                  <FaEdit />
+                                                </Button>
+                                                <Button 
+                                                  variant="outline-danger" 
+                                                  size="sm"
+                                                  onClick={async () => {
+                                                    if (!window.confirm(`${bank.bank_name} bankasını silmek istediğinizden emin misiniz?`)) {
+                                                      return;
+                                                    }
+                                                    
+                                                    try {
+                                                      const response = await fetch(`http://localhost:5000/api/banks/${bank.id}`, {
+                                                        method: 'DELETE',
+                                                        headers: { 
+                                                          'Content-Type': 'application/json',
+                                                          'admin-password': adminPassword
+                                                        }
+                                                      });
+                                                      
+                                                      if (response.ok) {
+                                                        showMessage('success', 'Banka başarıyla silindi!');
+                                                        fetchBanks(); // Listeyi yenile
+                                                      } else {
+                                                        const error = await response.json();
+                                                        showMessage('danger', error.error || 'Banka silinirken hata oluştu');
+                                                      }
+                                                    } catch (error) {
+                                                      console.error('Banka silme hatası:', error);
+                                                      showMessage('danger', 'Banka silinirken bağlantı hatası oluştu');
+                                                    }
+                                                  }}
+                                                >
+                                                  <FaTrash />
+                                                </Button>
+                                              </ButtonGroup>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              )}
                             </Accordion.Body>
                           </Accordion.Item>
                         ));
@@ -2123,6 +2332,423 @@ const AdminPanel = () => {
           >
             <FaSave className="me-2" />
             Kaydet
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Admin Settings Modal */}
+      <Modal show={showSettingsModal} onHide={() => setShowSettingsModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <FaCog className="me-2" />
+            Admin Ayarları
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Tabs defaultActiveKey="general" className="mb-3">
+            <Tab eventKey="general" title="Genel Ayarlar">
+              <Card>
+                <Card.Header>
+                  <h6><FaCog className="me-2" />Sistem Ayarları</h6>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Admin Panel Başlığı</Form.Label>
+                        <Form.Control
+                          type="text"
+                          defaultValue="Admin Panel"
+                          placeholder="Panel başlığını girin"
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Tema</Form.Label>
+                        <Form.Select defaultValue="light">
+                          <option value="light">Açık Tema</option>
+                          <option value="dark">Koyu Tema</option>
+                          <option value="auto">Otomatik</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Dil</Form.Label>
+                        <Form.Select defaultValue="tr">
+                          <option value="tr">Türkçe</option>
+                          <option value="en">English</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Zaman Dilimi</Form.Label>
+                        <Form.Select defaultValue="Europe/Istanbul">
+                          <option value="Europe/Istanbul">Türkiye (UTC+3)</option>
+                          <option value="UTC">UTC</option>
+                          <option value="America/New_York">New York (UTC-5)</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            </Tab>
+            
+            <Tab eventKey="security" title="Güvenlik">
+              <Card>
+                <Card.Header>
+                  <h6><FaShieldAlt className="me-2" />Güvenlik Ayarları</h6>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Admin Şifresi</Form.Label>
+                        <InputGroup>
+                          <Form.Control
+                            type="password"
+                            placeholder="Yeni admin şifresi"
+                          />
+                          <Button variant="outline-secondary">
+                            <FaEye />
+                          </Button>
+                        </InputGroup>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Şifre Onayı</Form.Label>
+                        <Form.Control
+                          type="password"
+                          placeholder="Şifreyi tekrar girin"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Oturum Süresi (dakika)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          defaultValue="30"
+                          min="5"
+                          max="1440"
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Maksimum Deneme</Form.Label>
+                        <Form.Control
+                          type="number"
+                          defaultValue="5"
+                          min="3"
+                          max="10"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <div className="form-check">
+                    <Form.Check
+                      type="checkbox"
+                      id="twoFactorAuth"
+                      label="İki Faktörlü Kimlik Doğrulama"
+                      defaultChecked={false}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Tab>
+            
+            <Tab eventKey="notifications" title="Bildirimler">
+              <Card>
+                <Card.Header>
+                  <h6><FaBell className="me-2" />Bildirim Ayarları</h6>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>E-posta Bildirimleri</Form.Label>
+                        <Form.Select defaultValue="enabled">
+                          <option value="enabled">Aktif</option>
+                          <option value="disabled">Pasif</option>
+                          <option value="critical">Sadece Kritik</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>E-posta Adresi</Form.Label>
+                        <Form.Control
+                          type="email"
+                          placeholder="admin@example.com"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <div className="form-check mb-3">
+                    <Form.Check
+                      type="checkbox"
+                      id="emailNewUser"
+                      label="Yeni kullanıcı kaydı bildirimi"
+                      defaultChecked={true}
+                    />
+                  </div>
+                  <div className="form-check mb-3">
+                    <Form.Check
+                      type="checkbox"
+                      id="emailSystemError"
+                      label="Sistem hatası bildirimi"
+                      defaultChecked={true}
+                    />
+                  </div>
+                  <div className="form-check mb-3">
+                    <Form.Check
+                      type="checkbox"
+                      id="emailBackup"
+                      label="Yedekleme bildirimi"
+                      defaultChecked={false}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Tab>
+            
+            <Tab eventKey="danger" title="Tehlikeli İşlemler">
+              <Card>
+                <Card.Header className="bg-danger text-white">
+                  <h6><FaExclamationTriangle className="me-2" />Tehlikeli İşlemler</h6>
+                </Card.Header>
+                <Card.Body>
+                  <Alert variant="danger" className="mb-4">
+                    <Alert.Heading>
+                      <FaExclamationTriangle className="me-2" />
+                      Uyarı!
+                    </Alert.Heading>
+                    <p>
+                      Aşağıdaki işlemler geri alınamaz ve tüm sistem verilerini kalıcı olarak silecektir. 
+                      Bu işlemleri yapmadan önce mutlaka yedek alın.
+                    </p>
+                  </Alert>
+                  
+                  <Row>
+                    <Col md={6}>
+                      <Card className="border-danger">
+                        <Card.Header className="bg-danger text-white">
+                          <h6><FaUsers className="me-2" />Kullanıcı Yönetimi</h6>
+                        </Card.Header>
+                        <Card.Body>
+                          <p className="text-muted">
+                            Tüm kullanıcı hesaplarını ve kullanıcı verilerini siler.
+                          </p>
+                          <Button 
+                            variant="outline-danger" 
+                            className="w-100"
+                            onClick={async () => {
+                              if (window.confirm('TÜM KULLANICILARI SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ?\n\nBu işlem geri alınamaz!')) {
+                                if (window.confirm('Son uyarı: Bu işlem tüm kullanıcı verilerini kalıcı olarak silecektir. Devam etmek istediğinizden emin misiniz?')) {
+                                  try {
+                                    const response = await fetch('http://localhost:5000/api/admin/users/all', {
+                                      method: 'DELETE',
+                                      headers: { 
+                                        'Content-Type': 'application/json',
+                                        'admin-password': adminPassword
+                                      }
+                                    });
+                                    
+                                    if (response.ok) {
+                                      showMessage('success', 'Tüm kullanıcılar başarıyla silindi!');
+                                      // Dashboard verilerini yenile
+                                      fetchDashboardData();
+                                    } else {
+                                      const error = await response.json();
+                                      showMessage('danger', error.error || 'Kullanıcılar silinirken hata oluştu');
+                                    }
+                                  } catch (error) {
+                                    console.error('Kullanıcı silme hatası:', error);
+                                    showMessage('danger', 'Kullanıcılar silinirken bağlantı hatası oluştu');
+                                  }
+                                }
+                              }
+                            }}
+                          >
+                            <FaTrash className="me-2" />
+                            Tüm Kullanıcıları Sil
+                          </Button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                    
+                    <Col md={6}>
+                      <Card className="border-danger">
+                        <Card.Header className="bg-danger text-white">
+                          <h6><FaDatabase className="me-2" />Veri Yönetimi</h6>
+                        </Card.Header>
+                        <Card.Body>
+                          <p className="text-muted">
+                            Tüm kullanıcı verilerini siler (gelir, gider, hesaplar, kartlar). 
+                            <br />
+                            <strong>Sistem verileri korunur:</strong> Bankalar, kategoriler, sistem parametreleri
+                          </p>
+                          <Button 
+                            variant="outline-danger" 
+                            className="w-100"
+                            onClick={async () => {
+                              if (window.confirm('TÜM VERİLERİ SİLMEK İSTEDİĞİNİZDEN EMİN MİSİNİZ?\n\nBu işlem geri alınamaz!')) {
+                                if (window.confirm('Son uyarı: Bu işlem tüm finansal verileri kalıcı olarak silecektir. Devam etmek istediğinizden emin misiniz?')) {
+                                  try {
+                                    const response = await fetch('http://localhost:5000/api/admin/data/all', {
+                                      method: 'DELETE',
+                                      headers: { 
+                                        'Content-Type': 'application/json',
+                                        'admin-password': adminPassword
+                                      }
+                                    });
+                                    
+                                    if (response.ok) {
+                                      showMessage('success', 'Tüm veriler başarıyla silindi! (Sistem verileri korundu)');
+                                      // Dashboard verilerini yenile
+                                      fetchDashboardData();
+                                    } else {
+                                      const error = await response.json();
+                                      showMessage('danger', error.error || 'Veriler silinirken hata oluştu');
+                                    }
+                                  } catch (error) {
+                                    console.error('Veri silme hatası:', error);
+                                    showMessage('danger', 'Veriler silinirken bağlantı hatası oluştu');
+                                  }
+                                }
+                              }
+                            }}
+                          >
+                            <FaTrash className="me-2" />
+                            Tüm Verileri Sil
+                          </Button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                  
+                  <Row className="mt-3">
+                    <Col md={12}>
+                      <Card className="border-warning">
+                        <Card.Header className="bg-warning text-dark">
+                          <h6><FaExclamationTriangle className="me-2" />Sistem Sıfırlama</h6>
+                        </Card.Header>
+                        <Card.Body>
+                          <p className="text-muted">
+                            Tüm sistemi sıfırlar. Kullanıcılar ve tüm kullanıcı verileri silinir.
+                            <br />
+                            <strong>Sistem verileri korunur:</strong> Bankalar, kategoriler, sistem parametreleri
+                          </p>
+                          <Button 
+                            variant="outline-warning" 
+                            className="w-100"
+                            onClick={async () => {
+                              if (window.confirm('SİSTEMİ TAMAMEN SIFIRLAMAK İSTEDİĞİNİZDEN EMİN MİSİNİZ?\n\nBu işlem geri alınamaz!')) {
+                                if (window.confirm('Son uyarı: Bu işlem tüm sistemi sıfırlayacaktır. Devam etmek istediğinizden emin misiniz?')) {
+                                  if (window.confirm('FİNAL UYARI: Bu işlem geri alınamaz! Tüm sistem verileri kalıcı olarak silinecektir. Devam etmek istediğinizden emin misiniz?')) {
+                                    try {
+                                      const response = await fetch('http://localhost:5000/api/admin/system/reset', {
+                                        method: 'DELETE',
+                                        headers: { 
+                                          'Content-Type': 'application/json',
+                                          'admin-password': adminPassword
+                                        }
+                                      });
+                                      
+                                      if (response.ok) {
+                                        showMessage('success', 'Sistem başarıyla sıfırlandı! (Sistem verileri korundu)');
+                                        // Dashboard verilerini yenile
+                                        fetchDashboardData();
+                                      } else {
+                                        const error = await response.json();
+                                        showMessage('danger', error.error || 'Sistem sıfırlanırken hata oluştu');
+                                      }
+                                    } catch (error) {
+                                      console.error('Sistem sıfırlama hatası:', error);
+                                      showMessage('danger', 'Sistem sıfırlanırken bağlantı hatası oluştu');
+                                    }
+                                  }
+                                }
+                              }
+                            }}
+                          >
+                            <FaExclamationTriangle className="me-2" />
+                            Sistemi Tamamen Sıfırla
+                          </Button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            </Tab>
+            
+            <Tab eventKey="backup" title="Yedekleme">
+              <Card>
+                <Card.Header>
+                  <h6><FaCloud className="me-2" />Yedekleme Ayarları</h6>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Otomatik Yedekleme</Form.Label>
+                        <Form.Select defaultValue="daily">
+                          <option value="disabled">Pasif</option>
+                          <option value="hourly">Saatlik</option>
+                          <option value="daily">Günlük</option>
+                          <option value="weekly">Haftalık</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Yedek Saklama Süresi</Form.Label>
+                        <Form.Select defaultValue="30">
+                          <option value="7">7 Gün</option>
+                          <option value="30">30 Gün</option>
+                          <option value="90">90 Gün</option>
+                          <option value="365">1 Yıl</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col md={6}>
+                      <Button variant="outline-primary" className="w-100">
+                        <FaDownload className="me-2" />
+                        Manuel Yedek Al
+                      </Button>
+                    </Col>
+                    <Col md={6}>
+                      <Button variant="outline-success" className="w-100">
+                        <FaUpload className="me-2" />
+                        Yedek Yükle
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            </Tab>
+          </Tabs>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowSettingsModal(false)}>
+            <FaTimes className="me-2" />
+            İptal
+          </Button>
+          <Button variant="primary">
+            <FaSave className="me-2" />
+            Ayarları Kaydet
           </Button>
         </Modal.Footer>
       </Modal>

@@ -1105,7 +1105,9 @@ app.post('/api/banks', authenticateAdmin, async (req, res) => {
     const checkResult = await query(checkQuery, [bank_name.trim()]);
     
     if (checkResult.rows.length > 0) {
-      return res.status(400).json({ error: 'Bu banka adı zaten mevcut' });
+      return res.status(400).json({ 
+        error: `"${bank_name.trim()}" bankası zaten mevcut! Lütfen farklı bir isim kullanın.` 
+      });
     }
     
     // Banka yoksa ekle
@@ -1116,6 +1118,46 @@ app.post('/api/banks', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Banka ekleme hatası:', error);
     res.status(500).json({ error: 'Banka eklenemedi' });
+  }
+});
+
+// Banka sil (Admin Only)
+app.delete('/api/banks/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const bankId = req.params.id;
+    
+    if (!bankId || isNaN(bankId)) {
+      return res.status(400).json({ error: 'Geçersiz banka ID' });
+    }
+    
+    // Önce bankanın var olup olmadığını kontrol et
+    const checkQuery = 'SELECT id, bank_name FROM banks WHERE id = $1';
+    const checkResult = await query(checkQuery, [bankId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Banka bulunamadı' });
+    }
+    
+    // Bankanın kullanılıp kullanılmadığını kontrol et (accounts tablosunda)
+    const usageQuery = 'SELECT COUNT(*) as count FROM accounts WHERE bank_id = $1';
+    const usageResult = await query(usageQuery, [bankId]);
+    
+    if (parseInt(usageResult.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        error: 'Bu banka kullanılıyor, silinemez. Önce bu bankaya ait hesapları silin.' 
+      });
+    }
+    
+    // Bankayı sil
+    const deleteQuery = 'DELETE FROM banks WHERE id = $1';
+    await query(deleteQuery, [bankId]);
+    
+    console.log(`✅ Banka silindi: ${checkResult.rows[0].bank_name} (ID: ${bankId})`);
+    res.json({ message: 'Banka başarıyla silindi' });
+    
+  } catch (error) {
+    console.error('❌ Banka silme hatası:', error);
+    res.status(500).json({ error: 'Banka silinemedi' });
   }
 });
 
@@ -1188,13 +1230,110 @@ app.post('/api/admin/dashboard', authenticateAdmin, async (req, res) => {
     const totalExpenseResult = await query(totalExpenseQuery);
     const totalExpense = totalExpenseResult.rows[0].total;
     
+    // Son aktiviteler - son eklenen gelirler
+    const recentIncomesQuery = `
+      SELECT 'Gelir eklendi' as description, amount, created_at as timestamp, 'income' as type
+      FROM incomes 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `;
+    const recentIncomesResult = await query(recentIncomesQuery);
+    
+    // Son aktiviteler - son eklenen giderler
+    const recentExpensesQuery = `
+      SELECT 'Gider eklendi' as description, amount, created_at as timestamp, 'expense' as type
+      FROM expenses 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `;
+    const recentExpensesResult = await query(recentExpensesQuery);
+    
+    // Son aktiviteler - son eklenen hesaplar
+    const recentAccountsQuery = `
+      SELECT 'Hesap eklendi' as description, account_name, created_at as timestamp, 'account' as type
+      FROM accounts 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `;
+    const recentAccountsResult = await query(recentAccountsQuery);
+    
+    // Son aktiviteler - son eklenen kredi kartları
+    const recentCreditCardsQuery = `
+      SELECT 'Kredi kartı eklendi' as description, card_name, created_at as timestamp, 'credit_card' as type
+      FROM credit_cards 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `;
+    const recentCreditCardsResult = await query(recentCreditCardsQuery);
+    
+    // Son aktiviteler - son eklenen bankalar
+    const recentBanksQuery = `
+      SELECT 'Banka eklendi' as description, bank_name, created_at as timestamp, 'bank' as type
+      FROM banks 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `;
+    const recentBanksResult = await query(recentBanksQuery);
+    
+    // Tüm aktiviteleri birleştir ve tarihe göre sırala
+    const allActivities = [
+      ...recentIncomesResult.rows.map(row => ({
+        description: `${row.description}: ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(row.amount)}`,
+        timestamp: row.timestamp,
+        type: row.type
+      })),
+      ...recentExpensesResult.rows.map(row => ({
+        description: `${row.description}: ${new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(row.amount)}`,
+        timestamp: row.timestamp,
+        type: row.type
+      })),
+      ...recentAccountsResult.rows.map(row => ({
+        description: `${row.description}: ${row.account_name}`,
+        timestamp: row.timestamp,
+        type: row.type
+      })),
+      ...recentCreditCardsResult.rows.map(row => ({
+        description: `${row.description}: ${row.card_name}`,
+        timestamp: row.timestamp,
+        type: row.type
+      })),
+      ...recentBanksResult.rows.map(row => ({
+        description: `${row.description}: ${row.bank_name}`,
+        timestamp: row.timestamp,
+        type: row.type
+      }))
+    ];
+    
+    // Tarihe göre sırala ve en son 10 aktiviteyi al
+    const recentActivities = allActivities
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 10);
+    
+    // Sistem performansı verileri (mock data - gerçek sistemde bu veriler sistemden alınır)
+    const systemUptime = Math.floor(Math.random() * 86400 * 7); // 0-7 gün arası
+    const memoryUsage = Math.floor(Math.random() * 100); // 0-100% arası
+    const cpuUsage = Math.floor(Math.random() * 100); // 0-100% arası
+    const diskUsage = Math.floor(Math.random() * 100); // 0-100% arası
+    const activeSessions = Math.floor(Math.random() * 50); // 0-50 arası
+    const errorRate = Math.floor(Math.random() * 5); // 0-5% arası
+    const responseTime = Math.floor(Math.random() * 1000) + 100; // 100-1100ms arası
+    
     const dashboardData = {
       totalUsers: parseInt(totalUsers),
       totalAccounts: parseInt(totalAccounts),
       totalCreditCards: parseInt(totalCreditCards),
-      totalIncome: parseFloat(totalIncome),
-      totalExpense: parseFloat(totalExpense),
-      netIncome: parseFloat(totalIncome) - parseFloat(totalExpense)
+      totalIncomes: parseFloat(totalIncome), // AdminPanel'de totalIncomes kullanılıyor
+      totalExpenses: parseFloat(totalExpense), // AdminPanel'de totalExpenses kullanılıyor
+      netIncome: parseFloat(totalIncome) - parseFloat(totalExpense),
+      recentActivities: recentActivities,
+      // Sistem performansı verileri
+      systemUptime: systemUptime,
+      memoryUsage: memoryUsage,
+      cpuUsage: cpuUsage,
+      diskUsage: diskUsage,
+      activeSessions: activeSessions,
+      errorRate: errorRate,
+      responseTime: responseTime
     };
     
     console.log('✅ Admin dashboard verileri hazırlandı:', dashboardData);
@@ -2760,5 +2899,65 @@ if (process.env.NODE_ENV !== 'production') {
     console.log('\n🛑 Server kapatılıyor...');
     process.exit(0);
   });
+
+// Admin endpoint'leri - Tüm kullanıcıları sil
+app.delete('/api/admin/users/all', authenticateAdmin, async (req, res) => {
+  try {
+    console.log('🗑️ Tüm kullanıcılar siliniyor...');
+    
+    // Tüm kullanıcıları sil (users tablosundan)
+    await query('DELETE FROM users');
+    
+    console.log('✅ Tüm kullanıcılar başarıyla silindi');
+    res.json({ success: true, message: 'Tüm kullanıcılar başarıyla silindi' });
+  } catch (error) {
+    console.error('❌ Kullanıcı silme hatası:', error);
+    res.status(500).json({ error: 'Kullanıcılar silinirken hata oluştu' });
+  }
+});
+
+// Admin endpoint'leri - Tüm kullanıcı verilerini sil (sistem verileri korunur)
+app.delete('/api/admin/data/all', authenticateAdmin, async (req, res) => {
+  try {
+    console.log('🗑️ Tüm kullanıcı verileri siliniyor...');
+    
+    // Kullanıcı verilerini sil (sistem verileri korunur)
+    await query('DELETE FROM rent_expenses');
+    await query('DELETE FROM expenses');
+    await query('DELETE FROM incomes');
+    await query('DELETE FROM credit_cards');
+    await query('DELETE FROM accounts');
+    await query('DELETE FROM automatic_payments');
+    
+    console.log('✅ Tüm kullanıcı verileri başarıyla silindi');
+    res.json({ success: true, message: 'Tüm kullanıcı verileri başarıyla silindi' });
+  } catch (error) {
+    console.error('❌ Veri silme hatası:', error);
+    res.status(500).json({ error: 'Veriler silinirken hata oluştu' });
+  }
+});
+
+// Admin endpoint'leri - Sistemi tamamen sıfırla
+app.delete('/api/admin/system/reset', authenticateAdmin, async (req, res) => {
+  try {
+    console.log('🔄 Sistem tamamen sıfırlanıyor...');
+    
+    // Tüm kullanıcı verilerini sil
+    await query('DELETE FROM rent_expenses');
+    await query('DELETE FROM expenses');
+    await query('DELETE FROM incomes');
+    await query('DELETE FROM credit_cards');
+    await query('DELETE FROM accounts');
+    await query('DELETE FROM automatic_payments');
+    await query('DELETE FROM users');
+    
+    // Sistem verilerini koru (banks, system_parameters, automatic_payment_categories)
+    console.log('✅ Sistem başarıyla sıfırlandı (sistem verileri korundu)');
+    res.json({ success: true, message: 'Sistem başarıyla sıfırlandı' });
+  } catch (error) {
+    console.error('❌ Sistem sıfırlama hatası:', error);
+    res.status(500).json({ error: 'Sistem sıfırlanırken hata oluştu' });
+  }
+});
 }
 
