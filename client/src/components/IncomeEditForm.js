@@ -174,7 +174,7 @@ const IncomeEditForm = () => {
 
     return (
         <div className="container mt-4">
-            <BackButton />
+            <BackButton fallbackPath="/gelirler" />
             <Card className="shadow">
                 <Card.Header className="bg-warning text-dark">
                     <h4 className="mb-0">✏️ Gelir Düzenle</h4>

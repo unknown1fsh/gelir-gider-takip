@@ -210,7 +210,7 @@ const AccountForm = () => {
 
   return (
     <div>
-      <BackButton />
+      <BackButton fallbackPath="/hesaplar" />
       <h2 className="mb-4 text-center">🏦 Yeni Hesap Ekle</h2>
       
       <Row className="justify-content-center">
@@ -450,7 +450,7 @@ const AccountForm = () => {
                 <div className="d-grid gap-2 d-md-flex justify-content-md-end">
                   <Button
                     variant="secondary"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/hesaplar')}
                     className="me-md-2"
                     disabled={loading}
                   >

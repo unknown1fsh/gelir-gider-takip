@@ -92,7 +92,10 @@ const CreditCardForm = () => {
 
     try {
       await axios.post('/api/credit-cards', formData);
-      setMessage({ type: 'success', text: 'Kredi kartı başarıyla eklendi!' });
+      setMessage({ 
+        type: 'success', 
+        text: '✅ Kredi kartı başarıyla eklendi! Yeni kart eklemek için formu tekrar doldurabilir veya kredi kartları listesine gidebilirsiniz.' 
+      });
       
       // Formu temizle
       setFormData({
@@ -104,10 +107,8 @@ const CreditCardForm = () => {
         statement_date: ''
       });
 
-      // 2 saniye sonra kredi kartları sayfasına yönlendir
-      setTimeout(() => {
-        navigate('/kredi-kartlari');
-      }, 2000);
+      // Formu temizledikten sonra kullanıcıya seçenek sun
+      // Otomatik yönlendirme kaldırıldı - kullanıcı isterse tekrar ekleyebilir
 
     } catch (error) {
       console.error('Kredi kartı eklenirken hata:', error);
@@ -142,7 +143,7 @@ const CreditCardForm = () => {
 
   return (
     <div>
-      <BackButton />
+      <BackButton fallbackPath="/kredi-kartlari" />
       <h2 className="mb-4 text-center">💳 Yeni Kredi Kartı Ekle</h2>
       
       <Row className="justify-content-center">
@@ -154,7 +155,28 @@ const CreditCardForm = () => {
             <CardBody>
               {message.text && (
                 <Alert variant={message.type} dismissible onClose={() => setMessage({ type: '', text: '' })}>
-                  {message.text}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>{message.text}</span>
+                    {message.type === 'success' && (
+                      <div className="ms-3">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => navigate('/kredi-kartlari')}
+                          className="me-2"
+                        >
+                          📋 Kredi Kartları Listesi
+                        </Button>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          onClick={() => setMessage({ type: '', text: '' })}
+                        >
+                          ➕ Yeni Kart Ekle
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </Alert>
               )}
 
@@ -336,7 +358,7 @@ const CreditCardForm = () => {
                 <div className="d-grid gap-2 d-md-flex justify-content-md-end">
                   <Button
                     variant="secondary"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/kredi-kartlari')}
                     className="me-md-2"
                     disabled={loading}
                   >

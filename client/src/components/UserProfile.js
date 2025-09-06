@@ -294,7 +294,7 @@ const UserProfile = () => {
 
   return (
     <Container fluid className="user-profile-container">
-      <BackButton />
+      <BackButton fallbackPath="/dashboard" />
       
       {message.text && (
         <Alert 
@@ -673,41 +673,6 @@ const UserProfile = () => {
                     />
                   </Form.Group>
                   
-                  {/* Veri Yönetimi Bölümü */}
-                  <Card className="mb-4 border-warning">
-                    <Card.Header className="bg-warning text-dark">
-                      <h6 className="mb-0">
-                        <FaExclamationTriangle className="me-2" />
-                        Veri Yönetimi
-                      </h6>
-                    </Card.Header>
-                    <Card.Body>
-                      <Alert variant="warning" className="mb-3">
-                        <FaExclamationTriangle className="me-2" />
-                        <strong>Dikkat!</strong> Bu işlemler geri alınamaz. Lütfen dikkatli olun.
-                      </Alert>
-                      
-                      <div className="d-grid gap-2">
-                        <Button
-                          variant="outline-danger"
-                          onClick={() => setShowResetModal(true)}
-                          className="reset-data-btn"
-                        >
-                          <FaUndo className="me-2" />
-                          Tüm Verileri Sıfırla
-                        </Button>
-                        
-                        <Button
-                          variant="outline-secondary"
-                          onClick={exportUserData}
-                        >
-                          <FaDownload className="me-2" />
-                          Verileri Dışa Aktar
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                  
                   <div className="d-flex justify-content-end">
                     <Button
                       variant="primary"
@@ -722,6 +687,121 @@ const UserProfile = () => {
                       Ayarları Kaydet
                     </Button>
                   </div>
+                </Tab>
+
+                {/* Veri Yönetimi Sekmesi */}
+                <Tab eventKey="data-management" title={
+                  <span><FaExclamationTriangle className="me-2" />Veri Yönetimi</span>
+                }>
+                  <Card className="border-warning">
+                    <Card.Header className="bg-warning text-dark">
+                      <h6 className="mb-0">
+                        <FaExclamationTriangle className="me-2" />
+                        Veri Yönetimi
+                      </h6>
+                    </Card.Header>
+                    <Card.Body>
+                      <Alert variant="warning" className="mb-4">
+                        <Alert.Heading>
+                          <FaExclamationTriangle className="me-2" />
+                          Dikkat!
+                        </Alert.Heading>
+                        <p>
+                          Aşağıdaki işlemler geri alınamaz ve tüm kişisel verilerinizi kalıcı olarak silecektir. 
+                          Bu işlemleri yapmadan önce mutlaka yedek alın.
+                        </p>
+                      </Alert>
+                      
+                      <Row>
+                        <Col md={6}>
+                          <Card className="border-danger h-100">
+                            <Card.Header className="bg-danger text-white">
+                              <h6><FaUndo className="me-2" />Veri Sıfırlama</h6>
+                            </Card.Header>
+                            <Card.Body>
+                              <p className="text-muted">
+                                Tüm kişisel verilerinizi siler (gelir, gider, hesaplar, kartlar).
+                              </p>
+                              <Button
+                                variant="outline-danger"
+                                onClick={() => setShowResetModal(true)}
+                                className="w-100 reset-data-btn"
+                              >
+                                <FaUndo className="me-2" />
+                                Tüm Verileri Sıfırla
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                        
+                        <Col md={6}>
+                          <Card className="border-info h-100">
+                            <Card.Header className="bg-info text-white">
+                              <h6><FaDownload className="me-2" />Veri Dışa Aktarma</h6>
+                            </Card.Header>
+                            <Card.Body>
+                              <p className="text-muted">
+                                Tüm verilerinizi JSON formatında indirin.
+                              </p>
+                              <Button
+                                variant="outline-info"
+                                onClick={exportUserData}
+                                className="w-100"
+                              >
+                                <FaDownload className="me-2" />
+                                Verileri Dışa Aktar
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      </Row>
+                      
+                      <Row className="mt-3">
+                        <Col md={12}>
+                          <Card className="border-secondary">
+                            <Card.Header className="bg-secondary text-white">
+                              <h6><FaChartLine className="me-2" />Veri İstatistikleri</h6>
+                            </Card.Header>
+                            <Card.Body>
+                              {userStats ? (
+                                <Row>
+                                  <Col md={3}>
+                                    <div className="text-center">
+                                      <div className="h4 text-primary">{userStats.totalAccounts || 0}</div>
+                                      <small className="text-muted">Toplam Hesap</small>
+                                    </div>
+                                  </Col>
+                                  <Col md={3}>
+                                    <div className="text-center">
+                                      <div className="h4 text-success">{userStats.totalIncomes || 0}</div>
+                                      <small className="text-muted">Toplam Gelir</small>
+                                    </div>
+                                  </Col>
+                                  <Col md={3}>
+                                    <div className="text-center">
+                                      <div className="h4 text-danger">{userStats.totalExpenses || 0}</div>
+                                      <small className="text-muted">Toplam Gider</small>
+                                    </div>
+                                  </Col>
+                                  <Col md={3}>
+                                    <div className="text-center">
+                                      <div className="h4 text-info">{userStats.totalCreditCards || 0}</div>
+                                      <small className="text-muted">Kredi Kartı</small>
+                                    </div>
+                                  </Col>
+                                </Row>
+                              ) : (
+                                <div className="text-center">
+                                  <Spinner animation="border" size="sm" className="me-2" />
+                                  İstatistikler yükleniyor...
+                                </div>
+                              )}
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
                 </Tab>
               </Tabs>
             </Card.Body>

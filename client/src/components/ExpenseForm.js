@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Card, Alert, Row, Col } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BackButton from './BackButton';
 
 const ExpenseForm = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         title: '',
         amount: '',
@@ -323,7 +325,7 @@ const ExpenseForm = () => {
 
     return (
         <div className="container mt-4">
-            <BackButton />
+            <BackButton fallbackPath="/giderler" />
             <Card className="shadow">
                 <Card.Header className="bg-danger text-white">
                     <h4 className="mb-0">💸 Yeni Gider Ekle</h4>
@@ -794,6 +796,14 @@ const ExpenseForm = () => {
                         </Row>
 
                         <div className="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <Button
+                                variant="secondary"
+                                onClick={() => navigate('/giderler')}
+                                className="me-md-2"
+                                disabled={loading}
+                            >
+                                ❌ İptal
+                            </Button>
                             <Button
                                 type="submit"
                                 variant="danger"

@@ -142,7 +142,7 @@ const IncomeDetail = () => {
     if (error || !income) {
         return (
             <div className="container mt-4">
-                <BackButton />
+                <BackButton fallbackPath="/gelirler" />
                 <Alert variant="danger">
                     {error || 'Gelir bulunamadı'}
                 </Alert>
@@ -152,7 +152,7 @@ const IncomeDetail = () => {
 
     return (
         <div className="container mt-4">
-            <BackButton />
+            <BackButton fallbackPath="/gelirler" />
             
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>💰 Gelir Detayı</h2>

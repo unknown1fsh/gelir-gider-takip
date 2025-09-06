@@ -10,7 +10,6 @@ import {
   FaChartLine, FaChartPie, FaCalendarAlt, FaMoneyBillWave,
   FaCreditCard, FaUniversity, FaArrowUp, FaArrowDown
 } from 'react-icons/fa';
-import BackButton from './BackButton';
 import './Dashboard.css';
 
 const Analytics = () => {
