@@ -14,7 +14,8 @@ const SidebarNavigation = () => {
     dashboard: false,
     transactions: false,
     data: false,
-    reports: false
+    reports: false,
+    admin: false
   });
 
   const isActive = (path) => {
@@ -170,24 +171,33 @@ const SidebarNavigation = () => {
             </div>
           </div>
           {expandedSections.reports && (
-            <>
-              <Nav.Link 
-                as={Link} 
-                to="/analytics" 
-                className={`sidebar-nav-link ${isActive('/analytics') ? 'active' : ''}`}
-              >
-                <FaChartLine className="nav-icon" />
-                <span>Analiz & Raporlar</span>
-              </Nav.Link>
-              <Nav.Link 
-                as={Link} 
-                to="/admin" 
-                className="sidebar-nav-link admin-panel-link"
-              >
-                <FaCog className="nav-icon" />
-                <span className="admin-panel-text">🛡️ Admin Panel</span>
-              </Nav.Link>
-            </>
+            <Nav.Link 
+              as={Link} 
+              to="/analytics" 
+              className={`sidebar-nav-link ${isActive('/analytics') ? 'active' : ''}`}
+            >
+              <FaChartLine className="nav-icon" />
+              <span>Analiz & Raporlar</span>
+            </Nav.Link>
+          )}
+        </div>
+
+        <div className="nav-section">
+          <div className="nav-section-header" onClick={() => toggleSection('admin')}>
+            <h6 className="nav-section-title">🛡️ Admin Panel</h6>
+            <div className="section-toggle">
+              {expandedSections.admin ? <FaChevronDown /> : <FaChevronRight />}
+            </div>
+          </div>
+          {expandedSections.admin && (
+            <Nav.Link 
+              as={Link} 
+              to="/admin" 
+              className="sidebar-nav-link admin-panel-link"
+            >
+              <FaCog className="nav-icon" />
+              <span className="admin-panel-text">Admin Panel</span>
+            </Nav.Link>
           )}
         </div>
       </Nav>
